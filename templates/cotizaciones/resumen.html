@@ -2,129 +2,118 @@
 {% block title %}Resumen — {{ cotizacion.numero }}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ cotizacion.numero }}</h1>
-            <p class="text-sm text-gray-600">
-                {{ cotizacion.implemento.nombre }} —
-                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
-                    {% if cotizacion.estado == 'borrador' %}bg-yellow-100 text-yellow-800
-                    {% elif cotizacion.estado == 'aprobada' %}bg-green-100 text-green-800
-                    {% else %}bg-blue-100 text-blue-800{% endif %}">
-                    {{ cotizacion.get_estado_display }}
-                </span>
-            </p>
+<div style="max-width: 650px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 24px;">Resumen de cotizacion</h2>
+
+    <!-- Info cliente + implemento -->
+    <div class="card" style="padding: 28px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+                <div class="label-dark" style="margin-bottom: 4px;">Cliente</div>
+                <div style="color: #f1f5f9; font-size: 16px; font-weight: 600;">{{ cotizacion.cliente.nombre }}</div>
+                {% if cotizacion.cliente.telefono %}
+                <div style="color: #94a3b8; font-size: 13px; margin-top: 2px;">{{ cotizacion.cliente.telefono }}</div>
+                {% endif %}
+            </div>
+            <div style="text-align: right;">
+                <div class="label-dark" style="margin-bottom: 4px;">Implemento</div>
+                <div style="color: #f1f5f9; font-size: 16px; font-weight: 600;">{{ cotizacion.implemento.nombre }}</div>
+                <div style="color: #94a3b8; font-size: 13px; margin-top: 2px;">
+                    {{ cotizacion.numero }}
+                    <span class="badge-status badge-{{ cotizacion.estado }}" style="margin-left: 6px;">{{ cotizacion.get_estado_display }}</span>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Info cliente -->
-    <div class="bg-white shadow rounded-lg p-5 mb-4">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Cliente</h2>
-        <div class="grid grid-cols-2 gap-2 text-sm">
-            <div><span class="text-gray-500">Nombre:</span> <span class="font-medium">{{ cotizacion.cliente.nombre }}</span></div>
-            <div><span class="text-gray-500">Tipo:</span> {{ cotizacion.cliente.tipo_cliente.nombre }}</div>
-            {% if cotizacion.cliente.telefono %}<div><span class="text-gray-500">Tel:</span> {{ cotizacion.cliente.telefono }}</div>{% endif %}
-            {% if cotizacion.cliente.email %}<div><span class="text-gray-500">Email:</span> {{ cotizacion.cliente.email }}</div>{% endif %}
+        <div class="divider" style="margin: 0 0 20px;"></div>
+
+        <!-- Desglose productos -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for item in items %}
+            <div style="display: flex; justify-content: space-between; align-items: center;
+                        {% if forloop.counter|divisibleby:2 %}background: rgba(255,255,255,0.02); margin: 0 -8px; padding: 6px 8px; border-radius: 6px;{% endif %}">
+                <div>
+                    <span style="color: #94a3b8; font-size: 14px;">{{ item.producto.nombre }}</span>
+                    <span style="color: #475569; font-size: 12px; margin-left: 8px;">{{ item.familia.nombre }}</span>
+                </div>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ item.precio_linea|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
         </div>
-    </div>
 
-    <!-- Productos -->
-    <div class="bg-white shadow rounded-lg p-5 mb-4">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Productos</h2>
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b text-left text-gray-500">
-                    <th class="py-2">Producto</th>
-                    <th class="py-2">Familia</th>
-                    <th class="py-2 text-right">Cant</th>
-                    <th class="py-2 text-right">Precio</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr class="border-b last:border-0">
-                    <td class="py-2 text-gray-900">{{ item.producto.nombre }}</td>
-                    <td class="py-2 text-gray-600">{{ item.familia.nombre }}</td>
-                    <td class="py-2 text-right">{{ item.cantidad }}</td>
-                    <td class="py-2 text-right font-medium">${{ item.precio_linea|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="divider" style="margin: 16px 0;"></div>
 
-    <!-- Totales -->
-    <div class="bg-white shadow rounded-lg p-5 mb-4">
-        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Totales</h2>
-        <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-                <span class="text-gray-600">Subtotal Bruto</span>
-                <span class="font-medium">${{ cotizacion.subtotal_bruto|floatformat:2 }}</span>
+        <!-- Totales -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #cbd5e1; font-size: 14px; font-weight: 500;">Subtotal</span>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ cotizacion.subtotal_bruto|floatformat:2 }}</span>
             </div>
             {% if cotizacion.bonif_cliente_monto %}
-            <div class="flex justify-between text-green-700">
-                <span>Bonif. Cliente ({{ cotizacion.bonif_cliente_pct }}%)</span>
-                <span>-${{ cotizacion.bonif_cliente_monto|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #22c55e; font-size: 14px;">Bonificacion cliente ({{ cotizacion.bonif_cliente_pct }}%)</span>
+                <span style="color: #22c55e; font-size: 14px;">-${{ cotizacion.bonif_cliente_monto|floatformat:2 }}</span>
             </div>
             {% endif %}
             {% if cotizacion.bonif_pago_monto %}
-            <div class="flex justify-between text-green-700">
-                <span>Bonif. Forma Pago ({{ cotizacion.bonif_pago_pct }}%)</span>
-                <span>-${{ cotizacion.bonif_pago_monto|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #22c55e; font-size: 14px;">Bonificacion forma pago ({{ cotizacion.bonif_pago_pct }}%)</span>
+                <span style="color: #22c55e; font-size: 14px;">-${{ cotizacion.bonif_pago_monto|floatformat:2 }}</span>
             </div>
             {% endif %}
-            <div class="flex justify-between border-t pt-2">
-                <span class="font-medium">Subtotal Neto</span>
-                <span class="font-medium">${{ cotizacion.subtotal_neto|floatformat:2 }}</span>
+            {% if cotizacion.bonif_cliente_monto or cotizacion.bonif_pago_monto %}
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #cbd5e1; font-size: 14px; font-weight: 500;">Subtotal bonificado</span>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ cotizacion.subtotal_neto|floatformat:2 }}</span>
             </div>
+            {% endif %}
             {% if cotizacion.iva_105_monto %}
-            <div class="flex justify-between text-gray-600">
-                <span>IVA 10.5%</span>
-                <span>${{ cotizacion.iva_105_monto|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8; font-size: 14px;">IVA 10.5%</span>
+                <span style="color: #e2e8f0; font-size: 14px;">${{ cotizacion.iva_105_monto|floatformat:2 }}</span>
             </div>
             {% endif %}
             {% if cotizacion.iva_21_monto %}
-            <div class="flex justify-between text-gray-600">
-                <span>IVA 21%</span>
-                <span>${{ cotizacion.iva_21_monto|floatformat:2 }}</span>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8; font-size: 14px;">IVA 21%</span>
+                <span style="color: #e2e8f0; font-size: 14px;">${{ cotizacion.iva_21_monto|floatformat:2 }}</span>
             </div>
             {% endif %}
-            <div class="flex justify-between border-t pt-3 text-lg font-bold">
-                <span>TOTAL</span>
-                <span>${{ cotizacion.precio_total|floatformat:2 }}</span>
+
+            <div class="divider-blue" style="margin: 4px 0;"></div>
+
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">TOTAL</span>
+                <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">${{ cotizacion.precio_total|floatformat:2 }}</span>
             </div>
         </div>
     </div>
 
-    {% if cotizacion.fecha_entrega %}
-    <div class="bg-white shadow rounded-lg p-5 mb-4">
-        <div class="text-sm">
-            <span class="text-gray-500">Fecha de entrega:</span>
-            <span class="font-medium">{{ cotizacion.fecha_entrega }}</span>
+    <!-- Fecha y notas -->
+    {% if cotizacion.fecha_entrega or cotizacion.notas %}
+    <div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
+        {% if cotizacion.fecha_entrega %}
+        <div style="display: flex; justify-content: space-between; margin-bottom: {% if cotizacion.notas %}12px{% else %}0{% endif %};">
+            <span style="color: #94a3b8; font-size: 13px;">Fecha de entrega</span>
+            <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ cotizacion.fecha_entrega }}</span>
         </div>
+        {% endif %}
         {% if cotizacion.notas %}
-        <div class="text-sm mt-2">
-            <span class="text-gray-500">Notas:</span>
-            {{ cotizacion.notas }}
+        <div>
+            <span style="color: #94a3b8; font-size: 13px;">Notas:</span>
+            <span style="color: #cbd5e1; font-size: 13px; margin-left: 4px;">{{ cotizacion.notas }}</span>
         </div>
         {% endif %}
     </div>
     {% endif %}
 
     <!-- Acciones -->
-    <div class="flex justify-between">
-        <a href="{% url 'cotizacion_inicio' %}"
-           class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-            Nueva Cotización
-        </a>
+    <div style="display: flex; gap: 12px;">
+        <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none;">Nueva Cotizacion</a>
         {% if cotizacion.estado == 'borrador' %}
-        <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}">
+        <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
             {% csrf_token %}
-            <button type="submit"
-                    class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
-                Aprobar Cotización
-            </button>
+            <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>
         </form>
         {% endif %}
     </div>

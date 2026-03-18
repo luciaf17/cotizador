@@ -1,94 +1,89 @@
 {% for fdata in familias_data %}
-<div class="bg-white shadow rounded-lg p-5 mb-4">
-    <h2 class="text-lg font-semibold text-gray-800 mb-1">{{ fdata.familia.nombre }}</h2>
-    <p class="text-xs text-gray-500 mb-3">
-        {% if fdata.familia.tipo_seleccion == 'O' %}Elegir uno{% else %}Elegir varios{% endif %}
-        {% if fdata.familia.obligatoria == 'NO' %} (opcional){% endif %}
-    </p>
+<div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">{{ fdata.familia.nombre }}</h3>
+        {% if fdata.familia.tipo_seleccion == 'Y' and fdata.familia.obligatoria == 'NO' %}
+        <span style="color: #64748b; font-size: 11px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">Opcional</span>
+        {% endif %}
+    </div>
 
-    {% if fdata.familia.tipo_seleccion == 'O' %}
-    <!-- TIPO O: Radio buttons -->
-    <div class="space-y-2">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% if fdata.familia.tipo_seleccion == 'O' %}
+        <!-- TIPO O: Radio -->
         {% if fdata.familia.obligatoria == 'NO' %}
-        <label class="flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-gray-50
-                      {% if not fdata.seleccionados %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}">
-            <input type="radio" name="familia_{{ fdata.familia.id }}" value="" checked
-                   class="text-blue-600">
-            <span class="text-gray-700">Ninguno</span>
-        </label>
+        <div class="option-item {% if not fdata.seleccionados %}selected{% endif %}">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="custom-radio {% if not fdata.seleccionados %}active{% endif %}">
+                    {% if not fdata.seleccionados %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                </div>
+                <span style="color: #cbd5e1; font-size: 14px;">Ninguno</span>
+            </div>
+        </div>
         {% endif %}
 
         {% for pdata in fdata.productos %}
-        <label class="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-gray-50 transition
-                      {% if pdata.seleccionado %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}"
-               hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
-               hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "add"}'
-               hx-swap="none">
-            <div class="flex items-center gap-3">
-                <input type="radio" name="familia_{{ fdata.familia.id }}"
-                       value="{{ pdata.producto.id }}"
-                       {% if pdata.seleccionado %}checked{% endif %}
-                       class="text-blue-600">
-                <span class="text-gray-900">{{ pdata.producto.nombre }}</span>
+        <div class="option-item {% if pdata.seleccionado %}selected{% endif %}"
+             hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
+             hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "add"}'
+             hx-swap="none">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="custom-radio {% if pdata.seleccionado %}active{% endif %}">
+                    {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                </div>
+                <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
             </div>
-            <span class="text-sm font-medium text-gray-600">
-                {% if pdata.precio %}${{ pdata.precio|floatformat:0 }}{% endif %}
+            {% if pdata.precio %}
+            <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                ${{ pdata.precio|floatformat:0 }}
             </span>
-        </label>
+            {% endif %}
+        </div>
         {% endfor %}
-    </div>
 
-    {% else %}
-    <!-- TIPO Y: Checkboxes -->
-    <div class="space-y-2">
+        {% else %}
+        <!-- TIPO Y: Checkboxes -->
         {% for pdata in fdata.productos %}
-        <label class="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-gray-50 transition
-                      {% if pdata.seleccionado %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}">
-            <div class="flex items-center gap-3">
-                <input type="checkbox"
-                       value="{{ pdata.producto.id }}"
-                       {% if pdata.seleccionado %}checked{% endif %}
-                       class="rounded text-blue-600"
-                       hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
-                       hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "{% if pdata.seleccionado %}remove{% else %}add{% endif %}"}'
-                       hx-target="#paso-content"
-                       hx-swap="innerHTML">
-                <span class="text-gray-900">{{ pdata.producto.nombre }}</span>
+        <div class="option-item {% if pdata.seleccionado %}selected{% endif %}"
+             hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
+             hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "{% if pdata.seleccionado %}remove{% else %}add{% endif %}"}'
+             hx-target="#paso-content"
+             hx-swap="innerHTML">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="custom-check {% if pdata.seleccionado %}active{% endif %}">
+                    {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                </div>
+                <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
             </div>
-            <span class="text-sm font-medium text-gray-600">
-                {% if pdata.precio %}${{ pdata.precio|floatformat:0 }}{% endif %}
+            {% if pdata.precio %}
+            <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                +${{ pdata.precio|floatformat:0 }}
             </span>
-        </label>
+            {% endif %}
+        </div>
         {% endfor %}
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endfor %}
 
 {% if not familias_data %}
-<div class="bg-white shadow rounded-lg p-5 text-gray-500">
-    No hay productos disponibles para este paso.
+<div class="card" style="padding: 40px; text-align: center;">
+    <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">📋</div>
+    <p style="color: #94a3b8; font-size: 14px;">No hay productos disponibles para este paso</p>
 </div>
 {% endif %}
 
-<!-- Navegación -->
-<div class="flex justify-between mt-6">
+<!-- Navegacion -->
+<div style="display: flex; gap: 12px; margin-top: 28px;">
     {% if has_prev %}
     <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=prev_orden %}"
-       class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-        &larr; Anterior
-    </a>
-    {% else %}
-    <div></div>
+       class="btn-secondary" style="text-decoration: none;">&larr; Volver</a>
     {% endif %}
 
     {% for fdata in familias_data %}
     {% if fdata.familia.tipo_seleccion == 'Y' %}
     <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
-       class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-       id="btn-siguiente">
-        Siguiente &rarr;
-    </a>
+       class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
     {% endif %}
     {% endfor %}
 </div>

@@ -1,65 +1,60 @@
 {% extends "base.html" %}
-{% block title %}Seleccionar Cliente — Cotizador{% endblock %}
+{% block title %}Nueva Cotizacion — Cotizador{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Nueva Cotización</h1>
+<div style="max-width: 550px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Nueva Cotizacion</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">Busca un cliente existente o crea uno nuevo</p>
 
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Buscar Cliente</h2>
-        <input type="text"
-               name="q"
-               placeholder="Buscar por nombre, email o teléfono..."
-               class="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    <!-- Buscar cliente -->
+    <div class="card" style="padding: 24px; margin-bottom: 20px;">
+        <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 14px;">Buscar Cliente</h3>
+        <input type="text" name="q" placeholder="Nombre, email o telefono..."
+               class="input-dark"
                hx-get="{% url 'buscar_clientes' %}"
                hx-trigger="input changed delay:300ms, search"
                hx-target="#resultados-clientes"
                hx-indicator="#buscando">
-        <span id="buscando" class="htmx-indicator text-sm text-gray-500 mt-1">Buscando...</span>
-        <div id="resultados-clientes" class="mt-3"></div>
+        <span id="buscando" class="htmx-indicator" style="color: #64748b; font-size: 12px; margin-top: 8px;">Buscando...</span>
+        <div id="resultados-clientes" style="margin-top: 12px;"></div>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Nuevo Cliente</h2>
+    <!-- Crear cliente -->
+    <div class="card" style="padding: 24px;">
+        <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 14px;">Nuevo Cliente</h3>
         <form method="post" action="{% url 'crear_cliente' %}">
             {% csrf_token %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                    <input type="text" name="nombre" required
-                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="label-dark">Nombre / Razon social *</label>
+                    <input type="text" name="nombre" required class="input-dark" placeholder="Ej: Agro del Sur S.A.">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Cliente *</label>
-                    <select name="tipo_cliente" required
-                            class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="label-dark">Tipo de cliente *</label>
+                    <select name="tipo_cliente" required class="input-dark">
                         <option value="">Seleccionar...</option>
                         {% for tipo in tipos_cliente %}
                         <option value="{{ tipo.id }}">{{ tipo.nombre }} ({{ tipo.bonificacion_default }}%)</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                    <input type="text" name="telefono"
-                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="label-dark">Telefono</label>
+                        <input type="text" name="telefono" class="input-dark" placeholder="351-555-1234">
+                    </div>
+                    <div>
+                        <label class="label-dark">Email</label>
+                        <input type="email" name="email" class="input-dark" placeholder="cliente@email.com">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" name="email"
-                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-                    <input type="text" name="direccion"
-                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="label-dark">Direccion</label>
+                    <input type="text" name="direccion" class="input-dark" placeholder="Direccion completa">
                 </div>
             </div>
-            <div class="mt-4">
-                <button type="submit"
-                        class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
-                    Crear y Continuar
-                </button>
+            <div style="margin-top: 24px;">
+                <button type="submit" class="btn-primary" style="width: 100%;">Crear y Continuar</button>
             </div>
         </form>
     </div>

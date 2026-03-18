@@ -1,18 +1,19 @@
 {% if clientes %}
-<ul class="divide-y divide-gray-200 border rounded-md">
+<div style="display: flex; flex-direction: column; gap: 6px;">
     {% for cliente in clientes %}
-    <li>
-        <a href="{% url 'seleccionar_implemento' cliente_id=cliente.id %}"
-           class="block px-4 py-3 hover:bg-gray-50 transition">
-            <div class="font-medium text-gray-900">{{ cliente.nombre }}</div>
-            <div class="text-sm text-gray-500">
-                {{ cliente.tipo_cliente.nombre }} — Bonif: {{ cliente.bonificacion_porcentaje }}%
-                {% if cliente.telefono %} — {{ cliente.telefono }}{% endif %}
+    <a href="{% url 'seleccionar_implemento' cliente_id=cliente.id %}"
+       class="option-item" style="text-decoration: none;">
+        <div>
+            <div style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ cliente.nombre }}</div>
+            <div style="color: #64748b; font-size: 12px; margin-top: 2px;">
+                {{ cliente.tipo_cliente.nombre }}
+                {% if cliente.telefono %} &middot; {{ cliente.telefono }}{% endif %}
             </div>
-        </a>
-    </li>
+        </div>
+        <span style="color: #60a5fa; font-size: 13px; font-weight: 500;">{{ cliente.bonificacion_porcentaje }}%</span>
+    </a>
     {% endfor %}
-</ul>
+</div>
 {% elif q %}
-<p class="text-sm text-gray-500 py-2">No se encontraron clientes para "{{ q }}"</p>
+<p style="color: #64748b; font-size: 13px; padding: 8px 0;">No se encontraron clientes para "{{ q }}"</p>
 {% endif %}

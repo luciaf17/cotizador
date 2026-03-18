@@ -1,43 +1,57 @@
 {% extends "base.html" %}
-{% block title %}Paso {{ current_idx|add:1 }} — Cotizador{% endblock %}
+{% block title %}Paso {{ current_idx|add:1 }} — {{ cotizacion.implemento.nombre }}{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto">
-    <div class="flex items-center justify-between mb-4">
+<div>
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div>
-            <h1 class="text-xl font-bold text-gray-900">{{ cotizacion.implemento.nombre }}</h1>
-            <p class="text-sm text-gray-600">{{ cotizacion.cliente.nombre }} — {{ cotizacion.numero }}</p>
-        </div>
-        <div class="text-sm text-gray-500">
-            Paso {{ current_idx|add:1 }} de {{ ordenes|length }}
+            <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">{{ cotizacion.implemento.nombre }}</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">{{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.numero }}</p>
         </div>
     </div>
 
-    <!-- Barra de progreso -->
-    <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-        <div class="bg-blue-600 h-2 rounded-full transition-all"
-             style="width: {% widthratio current_idx ordenes|length 100 %}%"></div>
+    <!-- Stepper -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 36px;">
+        {% for o in ordenes %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            {% if forloop.counter0 < current_idx %}
+            <div class="step-circle step-done">&#10003;</div>
+            {% elif forloop.counter0 == current_idx %}
+            <div class="step-circle step-active">{{ forloop.counter }}</div>
+            {% else %}
+            <div class="step-circle step-pending">{{ forloop.counter }}</div>
+            {% endif %}
+            <span style="color: {% if forloop.counter0 == current_idx %}#f1f5f9{% else %}#64748b{% endif %}; font-size: 13px; font-weight: {% if forloop.counter0 == current_idx %}600{% else %}400{% endif %};">
+                Paso {{ forloop.counter }}
+            </span>
+            {% if not forloop.last %}
+            <div style="width: 32px; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
 
-    <div class="flex gap-6">
-        <!-- Contenido principal -->
-        <div class="flex-1" id="paso-content">
+    <!-- Layout: content + sidebar -->
+    <div style="display: grid; grid-template-columns: 1fr {% if dimensiones %}300px{% endif %}; gap: 28px;">
+        <!-- Main content -->
+        <div id="paso-content">
             {% include "cotizaciones/partials/paso_content.html" %}
         </div>
 
-        <!-- Sidebar: dimensiones -->
+        <!-- Sidebar: dimensiones acumuladas -->
         {% if dimensiones %}
-        <div class="w-64 shrink-0">
-            <div class="bg-white shadow rounded-lg p-4 sticky top-4">
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Dimensiones Acumuladas</h3>
-                <dl class="space-y-2">
+        <div style="position: sticky; top: 80px; align-self: start;">
+            <div class="card" style="padding: 24px; backdrop-filter: blur(8px);">
+                <h3 style="color: #f1f5f9; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Dimensiones</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
                     {% for dim in dimensiones %}
-                    <div class="flex justify-between text-sm">
-                        <dt class="text-gray-600">{{ dim.nombre }}</dt>
-                        <dd class="font-medium text-gray-900">{{ dim.valor }} {{ dim.unidad }}</dd>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #94a3b8; font-size: 13px;">{{ dim.nombre }}</span>
+                        <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ dim.valor }} {{ dim.unidad }}</span>
                     </div>
                     {% endfor %}
-                </dl>
+                </div>
             </div>
         </div>
         {% endif %}

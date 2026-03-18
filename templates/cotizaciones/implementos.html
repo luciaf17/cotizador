@@ -2,28 +2,32 @@
 {% block title %}Seleccionar Implemento — Cotizador{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Seleccionar Implemento</h1>
-        <p class="text-gray-600 mt-1">Cliente: <span class="font-semibold">{{ cliente.nombre }}</span>
-            ({{ cliente.tipo_cliente.nombre }} — {{ cliente.bonificacion_porcentaje }}%)</p>
-    </div>
+<div>
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Que queres cotizar?</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 6px;">Selecciona el implemento para <strong style="color: #e2e8f0;">{{ cliente.nombre }}</strong></p>
+    <p style="color: #64748b; font-size: 13px; margin-bottom: 28px;">
+        {{ cliente.tipo_cliente.nombre }} &middot; Bonificacion: <span style="color: #60a5fa;">{{ cliente.bonificacion_porcentaje }}%</span>
+    </p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
         {% for imp in implementos %}
         <a href="{% url 'cotizacion_nueva' cliente_id=cliente.id implemento_id=imp.id %}"
-           class="bg-white shadow rounded-lg p-6 hover:shadow-md hover:ring-2 hover:ring-blue-500 transition">
-            <h3 class="text-lg font-semibold text-gray-900">{{ imp.nombre }}</h3>
+           class="card" style="text-align: center; padding: 32px 24px; text-decoration: none; transition: all 0.25s;"
+           onmouseover="this.style.transform='translateY(-2px)'"
+           onmouseout="this.style.transform='translateY(0)'">
+            <div style="color: #f1f5f9; font-size: 18px; font-weight: 600;">{{ imp.nombre }}</div>
             {% if imp.accesorios_tipo %}
-            <p class="text-sm text-gray-500 mt-1">{{ imp.accesorios_tipo }} (nivel {{ imp.nivel_rodado }})</p>
+            <div style="color: #64748b; font-size: 12px; margin-top: 8px;">
+                {{ imp.accesorios_tipo }} &middot; Nivel {{ imp.nivel_rodado }}
+            </div>
             {% endif %}
         </a>
         {% endfor %}
     </div>
 
-    <div class="mt-6">
-        <a href="{% url 'cotizacion_inicio' %}" class="text-blue-600 hover:text-blue-800 text-sm">
-            &larr; Volver a selección de cliente
+    <div style="margin-top: 24px;">
+        <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none; display: inline-block;">
+            &larr; Volver
         </a>
     </div>
 </div>
