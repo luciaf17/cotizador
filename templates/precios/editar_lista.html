@@ -42,8 +42,8 @@
             {% if lista.estado == 'borrador' %}
             <form method="post" action="{% url 'editar_precio' precio_id=pp.id %}" style="margin: 0; display: flex; gap: 4px; justify-content: center;">
                 {% csrf_token %}
-                <input type="number" name="precio" value="{{ pp.precio|stringformat:'g' }}" step="1" min="0"
-                       style="width: 90px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f1f5f9; font-size: 12px; text-align: right; outline: none;">
+                <input type="number" name="precio" value="{{ pp.precio|stringformat:'.0f' }}" step="1" min="0"
+                       style="width: 140px; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f1f5f9; font-size: 13px; text-align: right; outline: none; color-scheme: dark;">
                 <button type="submit" style="padding: 4px 8px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 11px; cursor: pointer;">OK</button>
             </form>
             {% endif %}
