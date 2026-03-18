@@ -200,6 +200,61 @@ class TestFlujoCompletoE2E:
         assert 'Chasis L1500' not in content
         assert 'Chasis L4000' not in content
 
+    def test_familia_vacia_no_muestra_header(self, e2e_setup):
+        """Familias sin productos disponibles no muestran su header."""
+        s = e2e_setup
+        cot = _crear_cotizacion(s)
+
+        s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['tanque_4000'].id,
+            'familia_id': s['fam_tanques'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['baulera_750'].id,
+            'familia_id': s['fam_bauleras'].id,
+            'orden': 2, 'accion': 'add',
+        })
+
+        response = s['client'].get(f'/{cot.id}/paso/3/')
+        content = response.content.decode()
+        # L1500 no pasa filtro (3.95 > 1.50) → familia Chasis 1 Eje no tiene productos
+        assert 'Chasis 1 Eje' not in content
+        # L4000 si pasa (3.95 en rango 3.80-4.00)
+        assert 'Chasis 2 Ejes' in content
+
+    def test_continuar_habilitado_tras_seleccionar_tipo_o(self, e2e_setup):
+        """Despues de seleccionar un radio tipo O, Continuar se habilita."""
+        s = e2e_setup
+        cot = _crear_cotizacion(s)
+
+        s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['tanque_4000'].id,
+            'familia_id': s['fam_tanques'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['baulera_750'].id,
+            'familia_id': s['fam_bauleras'].id,
+            'orden': 2, 'accion': 'add',
+        })
+
+        # Seleccionar chasis L4000
+        s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['chasis_l4000'].id,
+            'familia_id': s['fam_chasis_2ejes'].id,
+            'orden': 3, 'accion': 'add',
+        })
+
+        response = s['client'].get(f'/{cot.id}/paso/3/')
+        content = response.content.decode()
+        # Chasis seleccionado debe aparecer como seleccionado
+        assert 'Chasis L4000' in content
+        # Continuar debe estar habilitado (no cursor: not-allowed)
+        assert 'cursor: not-allowed' not in content
+        # Debe apuntar a rodados
+        assert '/rodados/0/' in content
+
     def test_dimensiones_se_acumulan_con_multiples_bauleras(self, e2e_setup):
         """Seleccionar 2 bauleras suma sus longitudes."""
         s = e2e_setup

@@ -82,22 +82,34 @@ def _build_paso_context(cotizacion, orden, tenant):
     familias = Familia.objects.filter(implemento=implemento, orden=orden)
 
     # Productos disponibles agrupados por familia
+    todos_disponibles = get_productos_disponibles(
+        implemento.id, orden, seleccionados_ids, acumulado,
+    )
     familias_data = []
     for familia in familias:
-        productos = get_productos_disponibles(
-            implemento.id, orden, seleccionados_ids, acumulado,
+        productos_familia = [p for p in todos_disponibles if p.familia_id == familia.id]
+
+        # Items ya seleccionados en esta familia (de la DB, no de disponibles)
+        seleccionados_familia = set(
+            cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
         )
-        productos_familia = [p for p in productos if p.familia_id == familia.id]
+
+        # Incluir productos seleccionados que ya no están en "disponibles"
+        # (check_compatibilidad oculta productos ya seleccionados)
+        ids_disponibles = {p.id for p in productos_familia}
+        for sel_id in seleccionados_familia:
+            if sel_id not in ids_disponibles:
+                try:
+                    prod_sel = Producto.objects.get(id=sel_id)
+                    productos_familia.append(prod_sel)
+                except Producto.DoesNotExist:
+                    pass
 
         precios = dict(
             PrecioProducto.objects.filter(
                 lista=cotizacion.lista,
                 producto_id__in=[p.id for p in productos_familia],
             ).values_list('producto_id', 'precio'),
-        )
-
-        seleccionados_familia = set(
-            cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
         )
 
         familias_data.append({

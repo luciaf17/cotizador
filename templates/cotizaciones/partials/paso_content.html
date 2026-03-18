@@ -1,4 +1,5 @@
 {% for fdata in familias_data %}
+{% if fdata.productos %}
 <div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">{{ fdata.familia.nombre }}</h3>
@@ -74,6 +75,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 {% endfor %}
 
 {% if not familias_data %}
