@@ -1,11 +1,48 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full bg-gray-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Cotizador{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request.htmx-indicator { display: inline-block; }
+    </style>
 </head>
-<body>
-    {% block content %}{% endblock %}
+<body class="h-full" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <nav class="bg-white shadow">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 justify-between items-center">
+                <div class="flex items-center">
+                    <a href="{% url 'cotizacion_inicio' %}" class="text-xl font-bold text-gray-900">
+                        Cotizador
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    {% if user.is_authenticated %}
+                        <span class="text-sm text-gray-600">{{ user.nombre|default:user.email }}</span>
+                        <a href="{% url 'admin:index' %}" class="text-sm text-blue-600 hover:text-blue-800">Admin</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="rounded-md p-4 mb-2 {% if message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
 </body>
 </html>
