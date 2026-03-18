@@ -234,6 +234,16 @@ def paso(request, cotizacion_id, orden):
     # Nav info
     has_prev = current_idx > 0
     prev_orden = ordenes[current_idx - 1] if has_prev else None
+    has_next = current_idx + 1 < len(ordenes)
+    next_orden = ordenes[current_idx + 1] if has_next else None
+
+    # Determinar si el paso necesita botón "Continuar" manual
+    # Tipo O con una sola familia en el orden → auto-avance (no necesita botón)
+    # Cualquier otro caso (tipo Y, múltiples familias tipo O, mixto) → botón manual
+    todas_tipo_o = all(f['familia'].tipo_seleccion == 'O' for f in familias_data)
+    una_sola_familia = len(familias_data) == 1
+    auto_avance = todas_tipo_o and una_sola_familia
+    mostrar_continuar = not auto_avance
 
     context = {
         'cotizacion': cotizacion,
@@ -244,6 +254,9 @@ def paso(request, cotizacion_id, orden):
         'dimensiones': dimensiones,
         'has_prev': has_prev,
         'prev_orden': prev_orden,
+        'has_next': has_next,
+        'next_orden': next_orden,
+        'mostrar_continuar': mostrar_continuar,
     }
 
     if request.headers.get('HX-Request'):
@@ -298,50 +311,26 @@ def seleccionar_producto(request, cotizacion_id):
 
     # Determinar siguiente paso
     ordenes = list(_get_ordenes(cotizacion.implemento))
-    siguiente_url = None
+    familias_del_orden = Familia.objects.filter(
+        implemento=cotizacion.implemento, orden=orden,
+    )
 
-    if familia.tipo_seleccion == 'O':
-        # Tipo O: avanza automáticamente
+    # Auto-avance: solo cuando es tipo O con UNA sola familia en el orden
+    todas_tipo_o = all(f.tipo_seleccion == 'O' for f in familias_del_orden)
+    una_sola_familia = familias_del_orden.count() == 1
+    auto_avance = familia.tipo_seleccion == 'O' and todas_tipo_o and una_sola_familia
+
+    if auto_avance:
         current_idx = ordenes.index(orden) if orden in ordenes else 0
         if current_idx + 1 < len(ordenes):
             siguiente_orden = ordenes[current_idx + 1]
-            siguiente_url = f'/cotizaciones/{cotizacion.id}/paso/{siguiente_orden}/'
+            siguiente_url = f'/{cotizacion.id}/paso/{siguiente_orden}/'
         else:
-            # Verificar rodados
-            rodados = get_rodados_para_implemento(
-                cotizacion.implemento,
-                _get_selected_ids(cotizacion),
-            )
-            if rodados:
-                siguiente_url = f'/cotizaciones/{cotizacion.id}/paso/{orden}/'  # reload for rodados
-            else:
-                siguiente_url = f'/cotizaciones/{cotizacion.id}/bonificaciones/'
-
-    if siguiente_url:
+            siguiente_url = f'/{cotizacion.id}/bonificaciones/'
         return HttpResponse(status=200, headers={'HX-Redirect': siguiente_url})
 
-    # Tipo Y: recargar el mismo paso
+    # No auto-avance: recargar el mismo paso
     return paso(request, cotizacion_id, orden)
-
-
-# ── Avanzar al siguiente paso (tipo Y) ──────────────────────────────
-
-
-def _avanzar_paso(request, cotizacion, orden):
-    ordenes = list(_get_ordenes(cotizacion.implemento))
-    current_idx = ordenes.index(orden) if orden in ordenes else 0
-
-    if current_idx + 1 < len(ordenes):
-        return redirect('cotizacion_paso', cotizacion_id=cotizacion.id, orden=ordenes[current_idx + 1])
-
-    # Verificar si hay rodados
-    seleccionados = _get_selected_ids(cotizacion)
-    rodados = get_rodados_para_implemento(cotizacion.implemento, seleccionados)
-    if rodados:
-        # TODO: paso de rodados
-        pass
-
-    return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion.id)
 
 
 # ── Bonificaciones ───────────────────────────────────────────────────

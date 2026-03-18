@@ -80,10 +80,13 @@
        class="btn-secondary" style="text-decoration: none;">&larr; Volver</a>
     {% endif %}
 
-    {% for fdata in familias_data %}
-    {% if fdata.familia.tipo_seleccion == 'Y' %}
+    {% if mostrar_continuar %}
+    {% if has_next %}
+    <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=next_orden %}"
+       class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
+    {% else %}
     <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
        class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
     {% endif %}
-    {% endfor %}
+    {% endif %}
 </div>
