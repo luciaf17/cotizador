@@ -41,25 +41,29 @@
         {% endfor %}
 
         {% else %}
-        <!-- TIPO Y: Checkboxes -->
+        <!-- TIPO Y: Checkboxes — form POST para actualizar dimensiones -->
         {% for pdata in fdata.productos %}
-        <div class="option-item {% if pdata.seleccionado %}selected{% endif %}"
-             hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
-             hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "{% if pdata.seleccionado %}remove{% else %}add{% endif %}"}'
-             hx-target="#paso-content"
-             hx-swap="innerHTML">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="custom-check {% if pdata.seleccionado %}active{% endif %}">
-                    {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+        <form method="post" action="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="producto_id" value="{{ pdata.producto.id }}">
+            <input type="hidden" name="familia_id" value="{{ fdata.familia.id }}">
+            <input type="hidden" name="orden" value="{{ orden }}">
+            <input type="hidden" name="accion" value="{% if pdata.seleccionado %}remove{% else %}add{% endif %}">
+            <button type="submit" class="option-item {% if pdata.seleccionado %}selected{% endif %}"
+                    style="width: 100%; text-align: left; font-family: inherit; font-size: inherit;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="custom-check {% if pdata.seleccionado %}active{% endif %}">
+                        {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                    </div>
+                    <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
                 </div>
-                <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
-            </div>
-            {% if pdata.precio %}
-            <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
-                +${{ pdata.precio|floatformat:0 }}
-            </span>
-            {% endif %}
-        </div>
+                {% if pdata.precio %}
+                <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                    +${{ pdata.precio|floatformat:0 }}
+                </span>
+                {% endif %}
+            </button>
+        </form>
         {% endfor %}
         {% endif %}
     </div>
@@ -81,12 +85,6 @@
     {% endif %}
 
     {% if mostrar_continuar %}
-    {% if has_next %}
-    <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=next_orden %}"
-       class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
-    {% else %}
-    <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
-       class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
-    {% endif %}
+    <a href="{{ continuar_url }}" class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
     {% endif %}
 </div>

@@ -15,8 +15,11 @@ urlpatterns = [
     path('nuevo/<int:cliente_id>/<int:implemento_id>/', views.cotizacion_nueva, name='cotizacion_nueva'),
     # Paso HTMX
     path('<int:cotizacion_id>/paso/<int:orden>/', views.paso, name='cotizacion_paso'),
-    # Seleccionar producto en paso (HTMX)
+    # Seleccionar producto en paso
     path('<int:cotizacion_id>/seleccionar/', views.seleccionar_producto, name='seleccionar_producto'),
+    # Rodados automáticos
+    path('<int:cotizacion_id>/rodados/<int:familia_idx>/', views.paso_rodados, name='cotizacion_rodados'),
+    path('<int:cotizacion_id>/seleccionar-rodado/', views.seleccionar_rodado, name='seleccionar_rodado'),
     # Bonificaciones y resumen
     path('<int:cotizacion_id>/bonificaciones/', views.bonificaciones, name='cotizacion_bonificaciones'),
     # Calcular totales (HTMX)

@@ -204,3 +204,79 @@ class TestFlujo:
         })
         assert response.status_code == 200
         assert b'9000' in response.content or b'9,000' in response.content
+
+    def test_bonif_max_se_renderiza_en_slider(self, auth_client, setup_basico):
+        """Bug 4: el slider debe tener max=bonif_max del tenant, no 100."""
+        s = setup_basico
+        s['tenant'].bonif_max_porcentaje = Decimal('25.00')
+        s['tenant'].save()
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+        CotizacionItem.objects.create(
+            cotizacion=cot, producto=s['producto'], familia=s['familia'],
+            cantidad=1, precio_unitario=Decimal('10000'),
+            precio_linea=Decimal('10000'), iva_porcentaje=Decimal('21'),
+        )
+        response = auth_client.get(f'/{cot.id}/bonificaciones/')
+        assert response.status_code == 200
+        content = response.content.decode()
+        # Verify bonif_max appears in slider max attr (not 100)
+        assert 'max="25' in content
+        assert 'max="100"' not in content
+
+    def test_seleccionar_tipo_y_redirige_al_mismo_paso(self, auth_client, setup_basico):
+        """Bug 2: seleccionar tipo Y debe recargar la página completa."""
+        s = setup_basico
+        fam_y = FamiliaFactory(
+            tenant=s['tenant'], implemento=s['implemento'],
+            orden=2, tipo_seleccion='Y', obligatoria='NO',
+        )
+        prod_y = ProductoFactory(
+            tenant=s['tenant'], implemento=s['implemento'], familia=fam_y,
+        )
+        PrecioProductoFactory(lista=s['lista'], producto=prod_y, precio=Decimal('5000'))
+
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+        response = auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': prod_y.id,
+            'familia_id': fam_y.id,
+            'orden': 2,
+            'accion': 'add',
+        })
+        # Debe hacer redirect (302) al mismo paso para refrescar sidebar
+        assert response.status_code == 302
+        assert f'/{cot.id}/paso/2/' in response.url
+
+
+@pytest.mark.django_db
+class TestRodadosView:
+    def test_rodados_accesible(self, auth_client, setup_basico):
+        """Bug 3: rodados deben tener view accesible."""
+        s = setup_basico
+        tenant = s['tenant']
+        imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=1)
+        imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
+        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas', agregacion='MAX')
+        fam = FamiliaFactory(tenant=tenant, implemento=imp, orden=1)
+        fam_llantas = FamiliaFactory(tenant=tenant, implemento=imp_rodados, nombre='Llantas', orden=1)
+        prod = ProductoFactory(tenant=tenant, implemento=imp, familia=fam)
+        ProductoPropiedadFactory(producto=prod, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('4'))
+        llanta = ProductoFactory(tenant=tenant, implemento=imp_rodados, familia=fam_llantas)
+        PrecioProductoFactory(lista=s['lista'], producto=prod, precio=Decimal('10000'))
+        PrecioProductoFactory(lista=s['lista'], producto=llanta, precio=Decimal('500'))
+
+        # Crear cotización directamente
+        cot = Cotizacion.objects.create(
+            tenant=tenant, implemento=imp, vendedor=s['tenant'].user_set.first(),
+            cliente=s['cliente'], lista=s['lista'], forma_pago=s['forma_pago'],
+            numero='COT-TEST-RODADOS',
+        )
+        CotizacionItem.objects.create(
+            cotizacion=cot, producto=prod, familia=fam,
+            cantidad=1, precio_unitario=Decimal('10000'),
+            precio_linea=Decimal('10000'), iva_porcentaje=Decimal('21'),
+        )
+        response = auth_client.get(f'/{cot.id}/rodados/0/')
+        assert response.status_code == 200
+        assert b'Llantas' in response.content

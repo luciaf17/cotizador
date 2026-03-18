@@ -7,15 +7,17 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from apps.catalogo.models import Familia, Implemento, Producto
+from apps.catalogo.models import Familia, Implemento, Producto, Propiedad
 from apps.clientes.models import Cliente, FormaPago, TipoCliente
 from apps.precios.models import ListaPrecio, PrecioProducto
 from apps.tenants.models import Tenant
 
-from .models import Cotizacion, CotizacionDimension, CotizacionItem
+from .models import Cotizacion, CotizacionItem
 from .services import (
     calcular_dimensiones,
     calcular_totales,
+    check_compatibilidad,
+    check_propiedades,
     get_productos_disponibles,
     get_rodados_para_implemento,
 )
@@ -28,7 +30,7 @@ def _get_tenant():
 
 def _get_ordenes(implemento):
     """Obtener lista ordenada de órdenes únicos para un implemento."""
-    return (
+    return list(
         Familia.objects.filter(implemento=implemento)
         .values_list('orden', flat=True)
         .distinct()
@@ -50,6 +52,107 @@ def _get_items_data(cotizacion):
 def _get_selected_ids(cotizacion):
     """IDs de productos ya seleccionados en la cotización."""
     return list(cotizacion.items.values_list('producto_id', flat=True))
+
+
+def _build_dimensiones(acumulado, tenant):
+    """Construir lista de dimensiones para el template."""
+    if not acumulado:
+        return []
+    dimensiones = []
+    for prop in Propiedad.objects.filter(tenant=tenant):
+        if prop.id in acumulado:
+            dimensiones.append({
+                'nombre': prop.nombre,
+                'valor': acumulado[prop.id],
+                'unidad': prop.unidad,
+            })
+    return dimensiones
+
+
+def _build_paso_context(cotizacion, orden, tenant):
+    """Construir contexto completo para un paso (reutilizable)."""
+    implemento = cotizacion.implemento
+    ordenes = _get_ordenes(implemento)
+    current_idx = ordenes.index(orden) if orden in ordenes else 0
+
+    seleccionados_ids = _get_selected_ids(cotizacion)
+    acumulado = calcular_dimensiones(seleccionados_ids)
+
+    # Familias del orden actual
+    familias = Familia.objects.filter(implemento=implemento, orden=orden)
+
+    # Productos disponibles agrupados por familia
+    familias_data = []
+    for familia in familias:
+        productos = get_productos_disponibles(
+            implemento.id, orden, seleccionados_ids, acumulado,
+        )
+        productos_familia = [p for p in productos if p.familia_id == familia.id]
+
+        precios = dict(
+            PrecioProducto.objects.filter(
+                lista=cotizacion.lista,
+                producto_id__in=[p.id for p in productos_familia],
+            ).values_list('producto_id', 'precio'),
+        )
+
+        seleccionados_familia = set(
+            cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
+        )
+
+        familias_data.append({
+            'familia': familia,
+            'productos': [
+                {
+                    'producto': p,
+                    'precio': precios.get(p.id, Decimal('0')),
+                    'seleccionado': p.id in seleccionados_familia,
+                }
+                for p in productos_familia
+            ],
+            'seleccionados': seleccionados_familia,
+        })
+
+    dimensiones = _build_dimensiones(acumulado, tenant)
+
+    # Nav
+    has_prev = current_idx > 0
+    prev_orden = ordenes[current_idx - 1] if has_prev else None
+    has_next = current_idx + 1 < len(ordenes)
+    next_orden = ordenes[current_idx + 1] if has_next else None
+
+    # Auto-avance: tipo O con una sola familia
+    todas_tipo_o = all(f['familia'].tipo_seleccion == 'O' for f in familias_data)
+    una_sola_familia = len(familias_data) == 1
+    auto_avance = todas_tipo_o and una_sola_familia
+    mostrar_continuar = not auto_avance
+
+    # Determinar URL de "Continuar"
+    if has_next:
+        continuar_url = f'/{cotizacion.id}/paso/{next_orden}/'
+    else:
+        # Último paso: verificar rodados
+        rodados = get_rodados_para_implemento(implemento, seleccionados_ids, acumulado)
+        if rodados:
+            continuar_url = f'/{cotizacion.id}/rodados/0/'
+        else:
+            continuar_url = f'/{cotizacion.id}/bonificaciones/'
+
+    return {
+        'cotizacion': cotizacion,
+        'orden': orden,
+        'ordenes': ordenes,
+        'current_idx': current_idx,
+        'familias_data': familias_data,
+        'dimensiones': dimensiones,
+        'has_prev': has_prev,
+        'prev_orden': prev_orden,
+        'has_next': has_next,
+        'next_orden': next_orden,
+        'mostrar_continuar': mostrar_continuar,
+        'continuar_url': continuar_url,
+        'es_rodado': False,
+    }
 
 
 # ── Inicio: selección de cliente ─────────────────────────────────────
@@ -93,7 +196,9 @@ def crear_cliente(request):
 
         if not nombre or not tipo_id:
             return HttpResponse(
-                '<div class="text-red-600 text-sm">Nombre y tipo son obligatorios.</div>',
+                '<div style="color:#f87171;font-size:13px;padding:10px;'
+                'background:rgba(248,113,113,0.1);border-radius:8px;">'
+                'Nombre y tipo son obligatorios.</div>',
             )
 
         tipo = get_object_or_404(TipoCliente, id=tipo_id, tenant=tenant)
@@ -139,13 +244,11 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
         messages.error(request, 'No hay lista de precios vigente.')
         return redirect('seleccionar_implemento', cliente_id=cliente_id)
 
-    # Buscar forma de pago por defecto
     forma_pago = FormaPago.objects.filter(tenant=tenant, activo=True).first()
     if not forma_pago:
         messages.error(request, 'No hay formas de pago configuradas.')
         return redirect('seleccionar_implemento', cliente_id=cliente_id)
 
-    # Generar número
     count = Cotizacion.objects.filter(tenant=tenant).count() + 1
     numero = f'COT-{date.today().year}-{count:04d}'
 
@@ -173,91 +276,7 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
 def paso(request, cotizacion_id, orden):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
-    implemento = cotizacion.implemento
-
-    ordenes = list(_get_ordenes(implemento))
-    current_idx = ordenes.index(orden) if orden in ordenes else 0
-
-    seleccionados_ids = _get_selected_ids(cotizacion)
-    acumulado = calcular_dimensiones(seleccionados_ids)
-
-    # Familias del orden actual
-    familias = Familia.objects.filter(implemento=implemento, orden=orden)
-
-    # Productos disponibles agrupados por familia
-    familias_data = []
-    for familia in familias:
-        productos = get_productos_disponibles(
-            implemento.id, orden, seleccionados_ids, acumulado,
-        )
-        # Filtrar solo los de esta familia
-        productos_familia = [p for p in productos if p.familia_id == familia.id]
-
-        # Obtener precios
-        precios = dict(
-            PrecioProducto.objects.filter(
-                lista=cotizacion.lista,
-                producto_id__in=[p.id for p in productos_familia],
-            ).values_list('producto_id', 'precio'),
-        )
-
-        # Items ya seleccionados de esta familia
-        seleccionados_familia = set(
-            cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
-        )
-
-        familias_data.append({
-            'familia': familia,
-            'productos': [
-                {
-                    'producto': p,
-                    'precio': precios.get(p.id, Decimal('0')),
-                    'seleccionado': p.id in seleccionados_familia,
-                }
-                for p in productos_familia
-            ],
-            'seleccionados': seleccionados_familia,
-        })
-
-    # Dimensiones acumuladas para mostrar
-    dimensiones = []
-    if acumulado:
-        from apps.catalogo.models import Propiedad
-        for prop in Propiedad.objects.filter(tenant=tenant):
-            if prop.id in acumulado:
-                dimensiones.append({
-                    'nombre': prop.nombre,
-                    'valor': acumulado[prop.id],
-                    'unidad': prop.unidad,
-                })
-
-    # Nav info
-    has_prev = current_idx > 0
-    prev_orden = ordenes[current_idx - 1] if has_prev else None
-    has_next = current_idx + 1 < len(ordenes)
-    next_orden = ordenes[current_idx + 1] if has_next else None
-
-    # Determinar si el paso necesita botón "Continuar" manual
-    # Tipo O con una sola familia en el orden → auto-avance (no necesita botón)
-    # Cualquier otro caso (tipo Y, múltiples familias tipo O, mixto) → botón manual
-    todas_tipo_o = all(f['familia'].tipo_seleccion == 'O' for f in familias_data)
-    una_sola_familia = len(familias_data) == 1
-    auto_avance = todas_tipo_o and una_sola_familia
-    mostrar_continuar = not auto_avance
-
-    context = {
-        'cotizacion': cotizacion,
-        'orden': orden,
-        'ordenes': ordenes,
-        'current_idx': current_idx,
-        'familias_data': familias_data,
-        'dimensiones': dimensiones,
-        'has_prev': has_prev,
-        'prev_orden': prev_orden,
-        'has_next': has_next,
-        'next_orden': next_orden,
-        'mostrar_continuar': mostrar_continuar,
-    }
+    context = _build_paso_context(cotizacion, orden, tenant)
 
     if request.headers.get('HX-Request'):
         return render(request, 'cotizaciones/partials/paso_content.html', context)
@@ -287,11 +306,9 @@ def seleccionar_producto(request, cotizacion_id):
     if accion == 'remove':
         cotizacion.items.filter(producto=producto, familia=familia).delete()
     else:
-        # Tipo O: reemplazar selección de la misma familia
         if familia.tipo_seleccion == 'O':
             cotizacion.items.filter(familia=familia).delete()
 
-        # Obtener precio
         precio = Decimal('0')
         try:
             pp = PrecioProducto.objects.get(lista=cotizacion.lista, producto=producto)
@@ -309,28 +326,141 @@ def seleccionar_producto(request, cotizacion_id):
             iva_porcentaje=producto.iva_porcentaje,
         )
 
-    # Determinar siguiente paso
-    ordenes = list(_get_ordenes(cotizacion.implemento))
+    # Auto-avance: tipo O con una sola familia en el orden
     familias_del_orden = Familia.objects.filter(
         implemento=cotizacion.implemento, orden=orden,
     )
-
-    # Auto-avance: solo cuando es tipo O con UNA sola familia en el orden
     todas_tipo_o = all(f.tipo_seleccion == 'O' for f in familias_del_orden)
     una_sola_familia = familias_del_orden.count() == 1
     auto_avance = familia.tipo_seleccion == 'O' and todas_tipo_o and una_sola_familia
 
     if auto_avance:
+        ordenes = _get_ordenes(cotizacion.implemento)
         current_idx = ordenes.index(orden) if orden in ordenes else 0
         if current_idx + 1 < len(ordenes):
-            siguiente_orden = ordenes[current_idx + 1]
-            siguiente_url = f'/{cotizacion.id}/paso/{siguiente_orden}/'
+            url = f'/{cotizacion.id}/paso/{ordenes[current_idx + 1]}/'
         else:
-            siguiente_url = f'/{cotizacion.id}/bonificaciones/'
-        return HttpResponse(status=200, headers={'HX-Redirect': siguiente_url})
+            # Último orden: verificar rodados
+            sel = _get_selected_ids(cotizacion)
+            acum = calcular_dimensiones(sel)
+            rodados = get_rodados_para_implemento(cotizacion.implemento, sel, acum)
+            if rodados:
+                url = f'/{cotizacion.id}/rodados/0/'
+            else:
+                url = f'/{cotizacion.id}/bonificaciones/'
+        return HttpResponse(status=200, headers={'HX-Redirect': url})
 
-    # No auto-avance: recargar el mismo paso
-    return paso(request, cotizacion_id, orden)
+    # No auto-avance: recargar paso completo (incluye sidebar dimensiones)
+    return redirect('cotizacion_paso', cotizacion_id=cotizacion_id, orden=orden)
+
+
+# ── Rodados automáticos ──────────────────────────────────────────────
+
+
+@login_required
+def paso_rodados(request, cotizacion_id, familia_idx):
+    """Paso de rodados: Llantas → Ejes → Elásticos."""
+    tenant = _get_tenant()
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    seleccionados_ids = _get_selected_ids(cotizacion)
+    acumulado = calcular_dimensiones(seleccionados_ids)
+    rodados = get_rodados_para_implemento(cotizacion.implemento, seleccionados_ids, acumulado)
+
+    if not rodados or familia_idx >= len(rodados):
+        return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion.id)
+
+    rodado = rodados[familia_idx]
+    familia = rodado['familia']
+    cantidad = rodado['cantidad']
+    productos_disponibles = rodado['productos']
+
+    precios = dict(
+        PrecioProducto.objects.filter(
+            lista=cotizacion.lista,
+            producto_id__in=[p.id for p in productos_disponibles],
+        ).values_list('producto_id', 'precio'),
+    )
+
+    seleccionados_familia = set(
+        cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
+    )
+
+    # Determinar URL siguiente
+    if familia_idx + 1 < len(rodados):
+        continuar_url = f'/{cotizacion.id}/rodados/{familia_idx + 1}/'
+    else:
+        continuar_url = f'/{cotizacion.id}/bonificaciones/'
+
+    ordenes_normales = _get_ordenes(cotizacion.implemento)
+
+    context = {
+        'cotizacion': cotizacion,
+        'familia': familia,
+        'cantidad': cantidad,
+        'productos': [
+            {
+                'producto': p,
+                'precio': precios.get(p.id, Decimal('0')),
+                'seleccionado': p.id in seleccionados_familia,
+            }
+            for p in productos_disponibles
+        ],
+        'seleccionados': seleccionados_familia,
+        'dimensiones': _build_dimensiones(acumulado, tenant),
+        'familia_idx': familia_idx,
+        'total_rodados': len(rodados),
+        'continuar_url': continuar_url,
+        'ordenes': ordenes_normales,
+        'es_rodado': True,
+    }
+
+    return render(request, 'cotizaciones/paso_rodados.html', context)
+
+
+@login_required
+def seleccionar_rodado(request, cotizacion_id):
+    """Seleccionar un producto de rodados."""
+    tenant = _get_tenant()
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    producto_id = request.POST.get('producto_id')
+    familia_id = request.POST.get('familia_id')
+    familia_idx = int(request.POST.get('familia_idx', 0))
+    cantidad = int(request.POST.get('cantidad', 1))
+    accion = request.POST.get('accion', 'add')
+
+    producto = get_object_or_404(Producto, id=producto_id)
+    familia = get_object_or_404(Familia, id=familia_id)
+
+    if accion == 'remove':
+        cotizacion.items.filter(producto=producto, familia=familia).delete()
+    else:
+        # Tipo O: reemplazar en la familia
+        if familia.tipo_seleccion == 'O':
+            cotizacion.items.filter(familia=familia).delete()
+
+        precio = Decimal('0')
+        try:
+            pp = PrecioProducto.objects.get(lista=cotizacion.lista, producto=producto)
+            precio = pp.precio
+        except PrecioProducto.DoesNotExist:
+            pass
+
+        CotizacionItem.objects.create(
+            cotizacion=cotizacion,
+            producto=producto,
+            familia=familia,
+            cantidad=cantidad,
+            precio_unitario=precio,
+            precio_linea=precio * cantidad,
+            iva_porcentaje=producto.iva_porcentaje,
+        )
+
+    return redirect('cotizacion_rodados', cotizacion_id=cotizacion.id, familia_idx=familia_idx)
 
 
 # ── Bonificaciones ───────────────────────────────────────────────────
@@ -342,7 +472,7 @@ def bonificaciones(request, cotizacion_id):
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     formas_pago = FormaPago.objects.filter(tenant=tenant, activo=True)
-    bonif_max = tenant.bonif_max_porcentaje if tenant else Decimal('30')
+    bonif_max = float(tenant.bonif_max_porcentaje) if tenant else 30
 
     if request.method == 'POST':
         bonif_cliente_pct = Decimal(request.POST.get('bonif_cliente_pct', '0'))
@@ -354,10 +484,10 @@ def bonificaciones(request, cotizacion_id):
         if forma_pago_id:
             cotizacion.forma_pago_id = forma_pago_id
 
-        # Calcular totales
         items_data = _get_items_data(cotizacion)
         totales = calcular_totales(
-            items_data, bonif_cliente_pct, bonif_pago_pct, bonif_max,
+            items_data, bonif_cliente_pct, bonif_pago_pct,
+            Decimal(str(bonif_max)),
         )
 
         cotizacion.subtotal_bruto = totales['subtotal_bruto']
@@ -380,7 +510,6 @@ def bonificaciones(request, cotizacion_id):
         cotizacion.save()
         return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 
-    # GET: mostrar form
     items_data = _get_items_data(cotizacion)
     subtotal_bruto = sum(Decimal(str(i['precio_linea'])) for i in items_data)
 
@@ -389,7 +518,10 @@ def bonificaciones(request, cotizacion_id):
         'formas_pago': formas_pago,
         'bonif_max': bonif_max,
         'subtotal_bruto': subtotal_bruto,
-        'bonif_cliente_default': cotizacion.cliente.bonificacion_porcentaje,
+        'bonif_cliente_default': min(
+            float(cotizacion.cliente.bonificacion_porcentaje),
+            bonif_max,
+        ),
     })
 
 
@@ -437,7 +569,7 @@ def aprobar(request, cotizacion_id):
     if request.method == 'POST':
         cotizacion.estado = 'aprobada'
         cotizacion.save()
-        messages.success(request, f'Cotización {cotizacion.numero} aprobada.')
+        messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
         return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
