@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Bonificaciones — Cotizador{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Datos y bonificaciones</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">
+        {{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.implemento.nombre }} &middot;
+        <span style="color: #60a5fa;">{{ cotizacion.numero }}</span>
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Subtotal bruto -->
+        <div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #94a3b8; font-size: 14px;">Subtotal Bruto</span>
+                <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">{{ subtotal_bruto|precio_ar }}</span>
+            </div>
+        </div>
+
+        <!-- Bonificaciones -->
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <!-- Bonif Cliente -->
+            <div style="margin-bottom: 28px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+                    <label class="label-dark" style="margin-bottom: 0;">Bonificacion cliente ({{ cotizacion.cliente.tipo_cliente.nombre }})</label>
+                    <span id="bonif_cliente_val" style="color: #60a5fa; font-size: 22px; font-weight: 700;">{{ bonif_cliente_default }}%</span>
+                </div>
+                <input type="range" name="bonif_cliente_pct" id="bonif_cliente"
+                       min="0" max="{{ bonif_cliente_max }}" step="0.5"
+                       value="{{ bonif_cliente_default }}"
+                       style="width: 100%;"
+                       oninput="onSlider('cliente')">
+                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                    <span style="color: #475569; font-size: 11px;">0%</span>
+                    <span style="color: #475569; font-size: 11px;">Max {{ bonif_cliente_max }}%</span>
+                </div>
+            </div>
+
+            <!-- Forma de Pago -->
+            <div style="margin-bottom: 28px;">
+                <label class="label-dark">Forma de pago</label>
+                <select name="forma_pago_id" id="forma_pago" class="input-dark"
+                        onchange="onFormaPago(this)">
+                    {% for fp in formas_pago %}
+                    <option value="{{ fp.id }}"
+                            data-bonif="{{ fp.bonificacion_porcentaje|stringformat:'g' }}"
+                            {% if fp.id == cotizacion.forma_pago_id %}selected{% endif %}>
+                        {{ fp.nombre }} ({{ fp.bonificacion_porcentaje|stringformat:'g' }}%)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Bonif Pago -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+                    <label class="label-dark" style="margin-bottom: 0;">Bonificacion forma de pago</label>
+                    <span id="bonif_pago_val" style="color: #60a5fa; font-size: 22px; font-weight: 700;">{{ bonif_pago_max }}%</span>
+                </div>
+                <input type="range" name="bonif_pago_pct" id="bonif_pago"
+                       min="0" max="{{ bonif_pago_max }}" step="0.5"
+                       value="{{ bonif_pago_max }}"
+                       style="width: 100%;"
+                       oninput="onSlider('pago')">
+                <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                    <span style="color: #475569; font-size: 11px;">0%</span>
+                    <span id="bonif_pago_max_label" style="color: #475569; font-size: 11px;">Max {{ bonif_pago_max }}%</span>
+                </div>
+            </div>
+
+            <!-- Indicador combinado -->
+            <div style="margin-top: 16px; padding: 10px 14px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.15); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #94a3b8; font-size: 12px;">Bonificacion combinada</span>
+                    <span id="bonif_total_val" style="color: #60a5fa; font-size: 14px; font-weight: 600;">—</span>
+                </div>
+                <div style="color: #475569; font-size: 11px; margin-top: 4px;">Tope maximo: {{ bonif_max }}%</div>
+            </div>
+        </div>
+
+        <!-- Preview de totales (HTMX) -->
+        <div id="totales-preview" class="card" style="padding: 24px; margin-bottom: 16px;">
+            <p style="color: #64748b; font-size: 13px; margin: 0;">Ajusta las bonificaciones para ver el desglose en vivo.</p>
+        </div>
+
+        <!-- Fecha y Notas -->
+        <div class="card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label class="label-dark">Fecha de entrega</label>
+                    <input type="date" name="fecha_entrega" class="input-dark"
+                           min="{{ fecha_min }}">
+                </div>
+                <div>
+                    <label class="label-dark">Notas</label>
+                    <textarea name="notas" rows="2" class="input-dark" placeholder="Notas adicionales..."
+                              style="resize: vertical;">{{ cotizacion.notas|default:"" }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Ver Resumen &rarr;</button>
+        </div>
+    </form>
+</div>
+
+<script>
+var BONIF_MAX = parseFloat('{{ bonif_max }}');
+var calcUrl = '{% url "cotizacion_calcular" cotizacion_id=cotizacion.id %}';
+
+function onSlider(which) {
+    var sc = document.getElementById('bonif_cliente');
+    var sp = document.getElementById('bonif_pago');
+    var vc = parseFloat(sc.value) || 0;
+    var vp = parseFloat(sp.value) || 0;
+
+    if (vc + vp > BONIF_MAX) {
+        if (which === 'cliente') {
+            vp = Math.round((BONIF_MAX - vc) * 2) / 2;
+            if (vp < 0) vp = 0;
+            sp.value = vp;
+        } else {
+            vc = Math.round((BONIF_MAX - vp) * 2) / 2;
+            if (vc < 0) vc = 0;
+            sc.value = vc;
+        }
+    }
+
+    document.getElementById('bonif_cliente_val').textContent = parseFloat(sc.value) + '%';
+    document.getElementById('bonif_pago_val').textContent = parseFloat(sp.value) + '%';
+    document.getElementById('bonif_total_val').textContent =
+        (parseFloat(sc.value) + parseFloat(sp.value)) + '% / ' + BONIF_MAX + '%';
+
+    fetchPreview(parseFloat(sc.value), parseFloat(sp.value));
+}
+
+function onFormaPago(sel) {
+    var bonif = parseFloat(sel.options[sel.selectedIndex].dataset.bonif) || 0;
+    var sp = document.getElementById('bonif_pago');
+    sp.max = bonif;
+    sp.value = bonif;
+    document.getElementById('bonif_pago_max_label').textContent = 'Max ' + bonif + '%';
+    onSlider('pago');
+}
+
+var fetchTimer = null;
+function fetchPreview(vc, vp) {
+    clearTimeout(fetchTimer);
+    fetchTimer = setTimeout(function() {
+        var url = calcUrl + '?bonif_cliente_pct=' + vc + '&bonif_pago_pct=' + vp;
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                document.getElementById('totales-preview').innerHTML = html;
+            });
+    }, 200);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    onSlider('cliente');
+});
+</script>
+{% endblock %}

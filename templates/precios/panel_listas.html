@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Listas de Precios{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+        <div>
+            <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Listas de Precios</h2>
+            {% if vigente %}
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">Vigente: Lista #{{ vigente.numero }}</p>
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'crear_lista' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nueva Lista</a>
+            <a href="{% url 'pdf_prearmados' %}" target="_blank" class="btn-secondary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">PDF Prearmados</a>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for lista in listas %}
+        <div class="card" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div>
+                    <span style="color: #60a5fa; font-size: 13px; font-weight: 600;">Lista #{{ lista.numero }}</span>
+                    <div style="color: #f1f5f9; font-size: 14px; font-weight: 500; margin-top: 2px;">{{ lista.nombre|default:"—" }}</div>
+                </div>
+                <div>
+                    <span class="badge-status badge-{{ lista.estado }}">{{ lista.get_estado_display }}</span>
+                </div>
+                {% if lista.ajuste_pct %}
+                <span style="color: #64748b; font-size: 12px;">Ajuste: {{ lista.ajuste_pct }}%</span>
+                {% endif %}
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="color: #475569; font-size: 12px;">{{ lista.precios.count }} precios</span>
+                {% if lista.estado == 'borrador' %}
+                <a href="{% url 'editar_lista' lista_id=lista.id %}"
+                   style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
+                <form method="post" action="{% url 'activar_lista' lista_id=lista.id %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="padding: 6px 14px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Activar</button>
+                </form>
+                {% elif lista.estado == 'vigente' %}
+                <a href="{% url 'editar_lista' lista_id=lista.id %}"
+                   style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Ver</a>
+                {% elif lista.estado == 'historica' %}
+                {% if user.rol == 'dueno' or user.rol == 'admin' or user.is_superuser %}
+                <a href="{% url 'editar_lista' lista_id=lista.id %}"
+                   style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Ver</a>
+                <form method="post" action="{% url 'activar_lista' lista_id=lista.id %}" style="margin: 0;"
+                      onsubmit="return confirm('Reactivar Lista #{{ lista.numero }}? La lista vigente actual pasara a historica.');">
+                    {% csrf_token %}
+                    <button type="submit" style="padding: 6px 14px; background: rgba(234,179,8,0.1); color: #facc15; border: 1px solid rgba(234,179,8,0.2); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Reactivar</button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="padding: 40px; text-align: center;">
+            <p style="color: #94a3b8;">No hay listas de precios.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

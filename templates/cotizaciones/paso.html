@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Paso {{ current_idx|add:1 }} — {{ cotizacion.implemento.nombre }}{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+            <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">{{ cotizacion.implemento.nombre }}</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">{{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.numero }}</p>
+        </div>
+    </div>
+
+    <!-- Stepper -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 36px;">
+        {% for o in ordenes %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            {% if forloop.counter0 < current_idx %}
+            <div class="step-circle step-done">&#10003;</div>
+            {% elif forloop.counter0 == current_idx %}
+            <div class="step-circle step-active">{{ forloop.counter }}</div>
+            {% else %}
+            <div class="step-circle step-pending">{{ forloop.counter }}</div>
+            {% endif %}
+            <span style="color: {% if forloop.counter0 == current_idx %}#f1f5f9{% else %}#64748b{% endif %}; font-size: 13px; font-weight: {% if forloop.counter0 == current_idx %}600{% else %}400{% endif %};">
+                Paso {{ forloop.counter }}
+            </span>
+            {% if not forloop.last %}
+            <div style="width: 32px; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Layout: content + sidebar -->
+    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 28px;">
+        <!-- Main content -->
+        <div id="paso-content">
+            {% include "cotizaciones/partials/paso_content.html" %}
+        </div>
+
+        <!-- Sidebar -->
+        <div style="position: sticky; top: 80px; align-self: start;">
+            {% if dimensiones %}
+            <div class="card" style="padding: 24px; backdrop-filter: blur(8px);">
+                <h3 style="color: #f1f5f9; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Dimensiones</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for dim in dimensiones %}
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #94a3b8; font-size: 13px;">{{ dim.nombre }}</span>
+                        <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ dim.valor|dimension_ar }} {{ dim.unidad }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% include "cotizaciones/partials/resumen_selecciones.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

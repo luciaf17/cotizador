@@ -1,0 +1,67 @@
+{% load formato %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    @page { size: A4; margin: 20mm; }
+    body { font-family: 'Montserrat', Helvetica, Arial, sans-serif; font-size: 10pt; color: #1e293b; margin: 0; }
+    .header { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
+    .header h1 { font-size: 18pt; margin: 0; font-weight: 700; }
+    .header .subtitle { color: #94a3b8; font-size: 9pt; margin-top: 4px; }
+    .header .right { float: right; text-align: right; color: #94a3b8; font-size: 9pt; }
+    .header .logo { height: 40px; margin-bottom: 6px; }
+    .accent-bar { height: 3px; background: {{ tenant.color_secundario }}; margin: 0 -20mm; }
+    h2 { font-size: 14pt; color: #0f172a; margin: 20px 0 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 0 0 24px; }
+    thead th { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 8px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    thead th:last-child { text-align: right; }
+    tbody td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; }
+    tbody td:last-child { text-align: right; font-weight: 600; }
+    tbody tr:nth-child(even) td { background: #f8fafc; }
+    .footer { margin-top: 24px; text-align: center; color: #94a3b8; font-size: 7pt; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="right">
+        Lista #{{ lista.numero }}<br>
+        {{ fecha|date:"d/m/Y" }}
+    </div>
+    {% if logo_url %}
+    <img src="{{ logo_url }}" class="logo" alt="{{ tenant.nombre }}">
+    {% endif %}
+    <h1>{{ tenant.nombre }}</h1>
+    <div class="subtitle">LISTA DE IMPLEMENTOS</div>
+</div>
+<div class="accent-bar"></div>
+
+{% regroup prearmados by implemento as implemento_list %}
+{% for imp_group in implemento_list %}
+<h2>{{ imp_group.grouper.nombre }}</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Implemento</th>
+            <th>Precio</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in imp_group.list %}
+        <tr>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.precio_calculado|precio_ar }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+
+<div class="footer">
+    {{ tenant.nombre }} &middot; Lista de implementos #{{ lista.numero }} &middot; Generado automaticamente
+</div>
+
+</body>
+</html>

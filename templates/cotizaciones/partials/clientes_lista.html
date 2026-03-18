@@ -1,0 +1,19 @@
+{% if clientes %}
+<div style="display: flex; flex-direction: column; gap: 6px;">
+    {% for cliente in clientes %}
+    <a href="{% url 'seleccionar_implemento' cliente_id=cliente.id %}"
+       class="option-item" style="text-decoration: none;">
+        <div>
+            <div style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ cliente.nombre }}</div>
+            <div style="color: #64748b; font-size: 12px; margin-top: 2px;">
+                {{ cliente.tipo_cliente.nombre }}
+                {% if cliente.telefono %} &middot; {{ cliente.telefono }}{% endif %}
+            </div>
+        </div>
+        <span style="color: #60a5fa; font-size: 13px; font-weight: 500;">{{ cliente.bonificacion_porcentaje }}%</span>
+    </a>
+    {% endfor %}
+</div>
+{% elif q %}
+<p style="color: #64748b; font-size: 13px; padding: 8px 0;">No se encontraron clientes para "{{ q }}"</p>
+{% endif %}

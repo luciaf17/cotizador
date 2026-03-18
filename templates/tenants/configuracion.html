@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Configuracion — {{ tenant.nombre }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">Configuracion</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Datos de la empresa</h3>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Nombre de la empresa</label>
+                    <input type="text" name="nombre" value="{{ tenant.nombre }}" class="input-dark">
+                </div>
+                <div>
+                    <label class="label-dark">Bonificacion maxima (%)</label>
+                    <input type="number" name="bonif_max_porcentaje" value="{{ tenant.bonif_max_porcentaje|stringformat:'g' }}"
+                           class="input-dark" step="0.5" min="0" max="100" style="width: 150px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Logo y colores del PDF</h3>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Logo</label>
+                    {% if tenant.logo %}
+                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                        <img src="{{ tenant.logo.url }}" style="height: 48px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);" alt="Logo actual">
+                        <label style="color: #f87171; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <input type="checkbox" name="quitar_logo" value="1" style="accent-color: #f87171;">
+                            Quitar logo
+                        </label>
+                    </div>
+                    {% endif %}
+                    <input type="file" name="logo" accept="image/*"
+                           style="color: #94a3b8; font-size: 13px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="label-dark">Color primario (header)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="color" name="color_primario" value="{{ tenant.color_primario }}"
+                                   style="width: 48px; height: 40px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: transparent; cursor: pointer;">
+                            <span style="color: #94a3b8; font-size: 13px;">{{ tenant.color_primario }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label-dark">Color secundario (acentos)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="color" name="color_secundario" value="{{ tenant.color_secundario }}"
+                                   style="width: 48px; height: 40px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: transparent; cursor: pointer;">
+                            <span style="color: #94a3b8; font-size: 13px;">{{ tenant.color_secundario }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div style="border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                    <div id="preview-header" style="background: {{ tenant.color_primario }}; padding: 16px 20px;">
+                        {% if tenant.logo %}
+                        <img id="preview-logo" src="{{ tenant.logo.url }}" style="height: 32px; margin-bottom: 8px; display: block;" alt="">
+                        {% else %}
+                        <img id="preview-logo" style="height: 32px; margin-bottom: 8px; display: none;" alt="">
+                        {% endif %}
+                        <span id="preview-nombre" style="color: #f1f5f9; font-size: 15px; font-weight: 700;">{{ tenant.nombre }}</span>
+                        <div style="color: #94a3b8; font-size: 9px; margin-top: 2px;">COTIZACION</div>
+                    </div>
+                    <div id="preview-accent" style="height: 3px; background: {{ tenant.color_secundario }};"></div>
+                    <div style="padding: 10px 20px; background: rgba(255,255,255,0.02);">
+                        <span style="color: #64748b; font-size: 11px;">Vista previa del header del PDF</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none;">&larr; Volver</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Guardar Configuracion</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.querySelector('[name="color_primario"]').addEventListener('input', function(e) {
+    document.getElementById('preview-header').style.background = e.target.value;
+    e.target.nextElementSibling.textContent = e.target.value;
+});
+document.querySelector('[name="color_secundario"]').addEventListener('input', function(e) {
+    document.getElementById('preview-accent').style.background = e.target.value;
+    e.target.nextElementSibling.textContent = e.target.value;
+});
+document.querySelector('[name="nombre"]').addEventListener('input', function(e) {
+    document.getElementById('preview-nombre').textContent = e.target.value;
+});
+document.querySelector('[name="logo"]').addEventListener('change', function(e) {
+    var img = document.getElementById('preview-logo');
+    if (e.target.files && e.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(ev) { img.src = ev.target.result; img.style.display = 'block'; };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+</script>
+{% endblock %}

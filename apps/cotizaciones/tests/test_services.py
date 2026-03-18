@@ -453,3 +453,80 @@ class TestCalcularTotales:
         resultado = calcular_totales(items, Decimal('0'), Decimal('0'))
         assert resultado['iva_105_base'] == Decimal('0')
         assert resultado['iva_105_monto'] == Decimal('0')
+
+
+# ── Tests de bugs corregidos ─────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestDimensionesMultiplesProductos:
+    """Bug 5: bauleras múltiples deben sumar longitud correctamente."""
+
+    def test_suma_longitud_dos_bauleras(self):
+        tenant = TenantFactory()
+        prop_long = PropiedadFactory(tenant=tenant, nombre='Longitud', agregacion='SUM')
+        b1 = ProductoFactory(tenant=tenant, nombre='Baulera 750')
+        b2 = ProductoFactory(tenant=tenant, nombre='Baulera 1700')
+        ProductoPropiedadFactory(producto=b1, propiedad=prop_long, tipo='Exacto', valor=Decimal('0.75'))
+        ProductoPropiedadFactory(producto=b2, propiedad=prop_long, tipo='Exacto', valor=Decimal('1.70'))
+
+        acumulado = calcular_dimensiones([b1.id, b2.id])
+        assert acumulado[prop_long.id] == Decimal('2.45')
+
+    def test_filtro_chasis_por_longitud_acumulada(self):
+        """Bug 1: chasis deben filtrarse por longitud acumulada de tanque+baulera."""
+        tenant = TenantFactory()
+        prop_long = PropiedadFactory(tenant=tenant, nombre='Longitud', agregacion='SUM')
+        imp = ImplementoFactory(tenant=tenant)
+
+        # Tanque y baulera en pasos previos
+        fam_tanque = FamiliaFactory(tenant=tenant, implemento=imp, orden=1)
+        tanque = ProductoFactory(tenant=tenant, implemento=imp, familia=fam_tanque)
+        ProductoPropiedadFactory(producto=tanque, propiedad=prop_long, tipo='Exacto', valor=Decimal('3.20'))
+
+        fam_baulera = FamiliaFactory(tenant=tenant, implemento=imp, orden=2, tipo_seleccion='Y')
+        baulera = ProductoFactory(tenant=tenant, implemento=imp, familia=fam_baulera)
+        ProductoPropiedadFactory(producto=baulera, propiedad=prop_long, tipo='Exacto', valor=Decimal('0.75'))
+
+        # Chasis en paso 3
+        fam_chasis = FamiliaFactory(tenant=tenant, implemento=imp, orden=3)
+        chasis_ok = ProductoFactory(tenant=tenant, implemento=imp, familia=fam_chasis, nombre='L4000')
+        ProductoPropiedadFactory(producto=chasis_ok, propiedad=prop_long, tipo='Minimo', valor=Decimal('3.80'))
+        ProductoPropiedadFactory(producto=chasis_ok, propiedad=prop_long, tipo='Maximo', valor=Decimal('4.00'))
+
+        chasis_chico = ProductoFactory(tenant=tenant, implemento=imp, familia=fam_chasis, nombre='L1400')
+        ProductoPropiedadFactory(producto=chasis_chico, propiedad=prop_long, tipo='Minimo', valor=Decimal('1.20'))
+        ProductoPropiedadFactory(producto=chasis_chico, propiedad=prop_long, tipo='Maximo', valor=Decimal('1.40'))
+
+        # Acumulado: 3.20 + 0.75 = 3.95
+        seleccionados = [tanque.id, baulera.id]
+        acumulado = calcular_dimensiones(seleccionados)
+        assert acumulado[prop_long.id] == Decimal('3.95')
+
+        disponibles = get_productos_disponibles(imp.id, 3, seleccionados, acumulado)
+        assert chasis_ok in disponibles
+        assert chasis_chico not in disponibles
+
+
+@pytest.mark.django_db
+class TestRodadosConNivelMultiple:
+    """Bug 3: rodados con nivel > 1 multiplican cantidades."""
+
+    def test_cantidad_rodados_viene_del_chasis(self):
+        """La cantidad de rodados es el valor de la propiedad del chasis (no * nivel)."""
+        tenant = TenantFactory()
+        imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=3)
+        imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
+
+        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas', agregacion='MAX')
+        fam_llantas = FamiliaFactory(tenant=tenant, implemento=imp_rodados, nombre='Llantas', orden=1)
+        ProductoFactory(tenant=tenant, implemento=imp_rodados, familia=fam_llantas)
+
+        chasis = ProductoFactory(tenant=tenant, implemento=imp)
+        ProductoPropiedadFactory(producto=chasis, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('4'))
+
+        acumulado = calcular_dimensiones([chasis.id])
+        rodados = get_rodados_para_implemento(imp, [chasis.id], acumulado)
+
+        # Cantidad = valor propiedad Llantas del chasis (4), no multiplicado por nivel
+        assert rodados[0]['cantidad'] == 4

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Historial de Cotizaciones{% endblock %}
+
+{% block content %}
+<div>
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 24px;">Historial de cotizaciones</h2>
+
+    <!-- Filtros -->
+    <form method="get" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" value="{{ filtro_q }}" placeholder="Buscar numero, cliente o vendedor..."
+               class="input-dark" style="flex: 1; min-width: 200px;">
+        <select name="estado" class="input-dark" style="width: 160px;" onchange="this.form.submit()">
+            <option value="">Todos los estados</option>
+            <option value="borrador" {% if filtro_estado == 'borrador' %}selected{% endif %}>Borrador</option>
+            <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
+            <option value="confirmada" {% if filtro_estado == 'confirmada' %}selected{% endif %}>Confirmada</option>
+        </select>
+        <select name="implemento" class="input-dark" style="width: 200px;" onchange="this.form.submit()">
+            <option value="">Todos los implementos</option>
+            {% for imp in implementos %}
+            <option value="{{ imp.id }}" {% if filtro_implemento == imp.id|stringformat:'d' %}selected{% endif %}>{{ imp.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 13px;">Filtrar</button>
+    </form>
+
+    <!-- Lista -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for cot in cotizaciones %}
+        <div class="card" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 24px; align-items: center; flex: 1;">
+                <div style="min-width: 120px;">
+                    <span style="color: #60a5fa; font-size: 13px; font-weight: 600;">{{ cot.numero }}</span>
+                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">{{ cot.created_at|date:"d/m/Y" }}</div>
+                </div>
+                <div style="min-width: 160px;">
+                    <div style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ cot.cliente.nombre }}</div>
+                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">{{ cot.implemento.nombre }}</div>
+                </div>
+                <div>
+                    <div style="color: #94a3b8; font-size: 12px;">{{ cot.vendedor.nombre|default:cot.vendedor.email }}</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="text-align: right;">
+                    <div style="color: #f1f5f9; font-size: 16px; font-weight: 700;">{{ cot.precio_total|precio_ar }}</div>
+                    <span class="badge-status badge-{{ cot.estado }}">{{ cot.get_estado_display }}</span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <a href="{% url 'cotizacion_resumen' cotizacion_id=cot.id %}"
+                       style="padding: 6px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Ver</a>
+                    <a href="{% url 'cotizacion_pdf' cotizacion_id=cot.id %}" target="_blank"
+                       style="padding: 6px 12px; background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">PDF</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="padding: 60px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 12px; opacity: 0.4;">&#128203;</div>
+            <p style="color: #94a3b8; font-size: 14px;">No hay cotizaciones</p>
+            <a href="{% url 'cotizacion_inicio' %}" class="btn-primary" style="text-decoration: none; display: inline-block; margin-top: 12px; font-size: 13px; padding: 10px 20px;">Nueva Cotizacion</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

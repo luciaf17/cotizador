@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Rodados — {{ familia.nombre }}{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+            <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Rodados: {{ familia.nombre }}</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">
+                {{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.numero }}
+                &middot; Cantidad: <span style="color: #60a5fa; font-weight: 600;">{{ cantidad }}</span>
+            </p>
+        </div>
+        <span style="color: #64748b; font-size: 13px;">
+            Rodado {{ familia_idx|add:1 }} de {{ total_rodados }}
+        </span>
+    </div>
+
+    <!-- Stepper rodados -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 36px;">
+        {% for o in ordenes %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="step-circle step-done">&#10003;</div>
+            {% if not forloop.last %}
+            <div style="width: 20px; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div style="width: 20px; height: 1px; background: rgba(59,130,246,0.3);"></div>
+        {% for i in "x"|ljust:total_rodados %}
+        <div style="display: flex; align-items: center; gap: 8px;">
+            {% if forloop.counter0 < familia_idx %}
+            <div class="step-circle step-done">&#10003;</div>
+            {% elif forloop.counter0 == familia_idx %}
+            <div class="step-circle step-active">R{{ forloop.counter }}</div>
+            {% else %}
+            <div class="step-circle step-pending">R{{ forloop.counter }}</div>
+            {% endif %}
+            {% if not forloop.last %}
+            <div style="width: 20px; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr {% if dimensiones %}300px{% endif %}; gap: 28px;">
+        <div>
+            <div class="card" style="padding: 20px 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">{{ familia.nombre }}</h3>
+                    <span style="color: #64748b; font-size: 11px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">
+                        x{{ cantidad }}
+                    </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for pdata in productos %}
+                    <form method="post" action="{% url 'seleccionar_rodado' cotizacion_id=cotizacion.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="producto_id" value="{{ pdata.producto.id }}">
+                        <input type="hidden" name="familia_id" value="{{ familia.id }}">
+                        <input type="hidden" name="familia_idx" value="{{ familia_idx }}">
+                        <input type="hidden" name="cantidad" value="{{ cantidad }}">
+                        <input type="hidden" name="accion" value="{% if pdata.seleccionado %}remove{% else %}add{% endif %}">
+                        <button type="submit" class="option-item {% if pdata.seleccionado %}selected{% endif %}" style="width: 100%; text-align: left; font-family: inherit; font-size: inherit;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="custom-radio {% if pdata.seleccionado %}active{% endif %}">
+                                    {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                                </div>
+                                <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">
+                                    {{ pdata.producto.nombre }}
+                                </span>
+                            </div>
+                            {% if pdata.precio %}
+                            <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                                {{ pdata.precio|precio_ar }} x{{ cantidad }}
+                            </span>
+                            {% endif %}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 28px;">
+                <a href="{{ continuar_url }}" class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
+            </div>
+        </div>
+
+        <div style="position: sticky; top: 80px; align-self: start;">
+            {% if dimensiones %}
+            <div class="card" style="padding: 24px; backdrop-filter: blur(8px);">
+                <h3 style="color: #f1f5f9; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Dimensiones</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for dim in dimensiones %}
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #94a3b8; font-size: 13px;">{{ dim.nombre }}</span>
+                        <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ dim.valor|dimension_ar }} {{ dim.unidad }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% include "cotizaciones/partials/resumen_selecciones.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% load formato %}
+{% for fdata in familias_data %}
+{% if fdata.productos %}
+<div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">{{ fdata.familia.nombre }}</h3>
+        {% if fdata.familia.obligatoria == 'NO' %}
+        <span style="color: #64748b; font-size: 11px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">Opcional</span>
+        {% endif %}
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% if fdata.familia.tipo_seleccion == 'O' %}
+        <!-- TIPO O: Radio — form POST -->
+        {% if fdata.familia.obligatoria == 'NO' %}
+        <div class="option-item {% if not fdata.seleccionados %}selected{% endif %}"
+             style="opacity: 0.6;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="custom-radio {% if not fdata.seleccionados %}active{% endif %}">
+                    {% if not fdata.seleccionados %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                </div>
+                <span style="color: #cbd5e1; font-size: 14px;">Ninguno</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% for pdata in fdata.productos %}
+        <form method="post" action="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="producto_id" value="{{ pdata.producto.id }}">
+            <input type="hidden" name="familia_id" value="{{ fdata.familia.id }}">
+            <input type="hidden" name="orden" value="{{ orden }}">
+            <input type="hidden" name="accion" value="add">
+            <button type="submit" class="option-item {% if pdata.seleccionado %}selected{% endif %}"
+                    style="width: 100%; text-align: left; font-family: inherit; font-size: inherit;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="custom-radio {% if pdata.seleccionado %}active{% endif %}">
+                        {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                    </div>
+                    <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
+                </div>
+                {% if pdata.precio %}
+                <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                    {{ pdata.precio|precio_ar }}
+                </span>
+                {% endif %}
+            </button>
+        </form>
+        {% endfor %}
+
+        {% else %}
+        <!-- TIPO Y: Checkboxes — form POST -->
+        {% for pdata in fdata.productos %}
+        <form method="post" action="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="producto_id" value="{{ pdata.producto.id }}">
+            <input type="hidden" name="familia_id" value="{{ fdata.familia.id }}">
+            <input type="hidden" name="orden" value="{{ orden }}">
+            <input type="hidden" name="accion" value="{% if pdata.seleccionado %}remove{% else %}add{% endif %}">
+            <button type="submit" class="option-item {% if pdata.seleccionado %}selected{% endif %}"
+                    style="width: 100%; text-align: left; font-family: inherit; font-size: inherit;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="custom-check {% if pdata.seleccionado %}active{% endif %}">
+                        {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
+                    </div>
+                    <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
+                </div>
+                {% if pdata.precio %}
+                <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
+                    +{{ pdata.precio|precio_ar }}
+                </span>
+                {% endif %}
+            </button>
+        </form>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if not familias_data %}
+<div class="card" style="padding: 40px; text-align: center;">
+    <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">&#128203;</div>
+    <p style="color: #94a3b8; font-size: 14px;">No hay productos disponibles para este paso</p>
+</div>
+{% endif %}
+
+<!-- Navegacion -->
+<div style="display: flex; gap: 12px; margin-top: 28px;">
+    {% if has_prev %}
+    <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=prev_orden %}"
+       class="btn-secondary" style="text-decoration: none;">&larr; Volver</a>
+    {% endif %}
+
+    {% if mostrar_continuar %}
+    {% if falta_obligatorio %}
+    <span class="btn-primary" style="text-decoration: none; opacity: 0.4; cursor: not-allowed;"
+          title="Selecciona un producto en cada familia obligatoria">Continuar &rarr;</span>
+    {% else %}
+    <a href="{{ continuar_url }}" class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
+    {% endif %}
+    {% endif %}
+</div>

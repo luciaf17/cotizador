@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Nueva Lista de Precios{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Nueva Lista de Precios</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">Base: Lista #{{ vigente.numero }} ({{ vigente.nombre|default:"vigente" }})</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Nombre (opcional)</label>
+                    <input type="text" name="nombre" class="input-dark" placeholder="Ej: Lista Marzo 2026">
+                </div>
+                <div>
+                    <label class="label-dark">Porcentaje de ajuste sobre Lista #{{ vigente.numero }}</label>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="number" name="ajuste_pct" class="input-dark" value="5" step="0.5" min="-50" max="100"
+                               style="width: 120px; text-align: right;">
+                        <span style="color: #60a5fa; font-size: 18px; font-weight: 700;">%</span>
+                    </div>
+                    <span style="color: #475569; font-size: 11px; margin-top: 6px; display: block;">CEILING(precio x (1 + %/100), 1) — redondeo hacia arriba</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="{% url 'panel_listas' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Crear Lista en Borrador</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
