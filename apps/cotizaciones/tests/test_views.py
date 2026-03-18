@@ -133,9 +133,10 @@ class TestFlujo:
             'orden': 1,
             'accion': 'add',
         })
-        # Tipo O con solo 1 orden → redirige a bonificaciones
-        assert response.status_code == 200
+        # Tipo O con solo 1 orden → redirect a bonificaciones
+        assert response.status_code == 302
         assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1
+        assert 'bonificaciones' in response.url
 
     def test_bonificaciones_get(self, auth_client, setup_basico):
         s = setup_basico
@@ -280,3 +281,135 @@ class TestRodadosView:
         response = auth_client.get(f'/{cot.id}/rodados/0/')
         assert response.status_code == 200
         assert b'Llantas' in response.content
+
+
+@pytest.mark.django_db
+class TestTipoORadioButtons:
+    def test_tipo_o_selecciona_y_guarda_item(self, auth_client, setup_basico):
+        """Form POST en tipo O crea el CotizacionItem correctamente."""
+        s = setup_basico
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+
+        response = auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['producto'].id,
+            'familia_id': s['familia'].id,
+            'orden': 1,
+            'accion': 'add',
+        })
+        # Debe redirigir (302) no quedarse quieto
+        assert response.status_code == 302
+        item = CotizacionItem.objects.get(cotizacion=cot)
+        assert item.producto_id == s['producto'].id
+        assert item.precio_unitario == Decimal('10000')
+
+    def test_tipo_o_reemplaza_seleccion_anterior(self, auth_client, setup_basico):
+        """Seleccionar otro producto en tipo O reemplaza el anterior."""
+        s = setup_basico
+        prod2 = ProductoFactory(tenant=s['tenant'], implemento=s['implemento'], familia=s['familia'])
+        PrecioProductoFactory(lista=s['lista'], producto=prod2, precio=Decimal('20000'))
+
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+
+        # Seleccionar primer producto
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['producto'].id,
+            'familia_id': s['familia'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        # Seleccionar segundo (debe reemplazar)
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': prod2.id,
+            'familia_id': s['familia'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1
+        assert CotizacionItem.objects.get(cotizacion=cot).producto_id == prod2.id
+
+
+@pytest.mark.django_db
+class TestContinuarObligatorio:
+    def test_continuar_deshabilitado_sin_seleccion_obligatoria(self, auth_client, setup_basico):
+        """Si familia obligatoria=SI y nada seleccionado, Continuar esta deshabilitado."""
+        s = setup_basico
+        # Agregar un segundo orden para que el paso 1 tenga boton Continuar
+        fam2 = FamiliaFactory(
+            tenant=s['tenant'], implemento=s['implemento'],
+            orden=1, tipo_seleccion='O', obligatoria='SI',
+        )
+        ProductoFactory(tenant=s['tenant'], implemento=s['implemento'], familia=fam2)
+
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+
+        response = auth_client.get(f'/{cot.id}/paso/1/')
+        content = response.content.decode()
+        # Boton deshabilitado (span con cursor: not-allowed)
+        assert 'cursor: not-allowed' in content
+
+    def test_continuar_habilitado_con_seleccion(self, auth_client, setup_basico):
+        """Con producto seleccionado en familia obligatoria, Continuar esta habilitado."""
+        s = setup_basico
+        fam2 = FamiliaFactory(
+            tenant=s['tenant'], implemento=s['implemento'],
+            orden=1, tipo_seleccion='O', obligatoria='SI',
+        )
+        prod2 = ProductoFactory(tenant=s['tenant'], implemento=s['implemento'], familia=fam2)
+        PrecioProductoFactory(lista=s['lista'], producto=prod2, precio=Decimal('5000'))
+        FamiliaFactory(tenant=s['tenant'], implemento=s['implemento'], orden=2, tipo_seleccion='Y', obligatoria='NO')
+
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+
+        # Seleccionar en ambas familias obligatorias
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['producto'].id,
+            'familia_id': s['familia'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': prod2.id,
+            'familia_id': fam2.id,
+            'orden': 1, 'accion': 'add',
+        })
+
+        response = auth_client.get(f'/{cot.id}/paso/1/')
+        content = response.content.decode()
+        assert 'cursor: not-allowed' not in content
+        assert 'Continuar' in content
+
+
+@pytest.mark.django_db
+class TestAutoAvanceARodados:
+    def test_tipo_o_auto_avance_ultimo_paso_redirige_a_rodados(self, auth_client, setup_basico):
+        """Tipo O con 1 familia en ultimo paso redirige a rodados si aplica."""
+        s = setup_basico
+        tenant = s['tenant']
+        # Implemento con rodados, una sola familia tipo O
+        imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=1)
+        fam = FamiliaFactory(tenant=tenant, implemento=imp, orden=1, tipo_seleccion='O', obligatoria='SI')
+        prod = ProductoFactory(tenant=tenant, implemento=imp, familia=fam)
+        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas2', agregacion='MAX')
+        ProductoPropiedadFactory(producto=prod, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('4'))
+        PrecioProductoFactory(lista=s['lista'], producto=prod, precio=Decimal('10000'))
+
+        imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
+        fam_llantas = FamiliaFactory(tenant=tenant, implemento=imp_rodados, nombre='Llantas', orden=1)
+        llanta = ProductoFactory(tenant=tenant, implemento=imp_rodados, familia=fam_llantas)
+        PrecioProductoFactory(lista=s['lista'], producto=llanta, precio=Decimal('500'))
+
+        cot = Cotizacion.objects.create(
+            tenant=tenant, implemento=imp, vendedor=tenant.user_set.first(),
+            cliente=s['cliente'], lista=s['lista'], forma_pago=s['forma_pago'],
+            numero='COT-TEST-AUTO-ROD',
+        )
+
+        response = auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': prod.id,
+            'familia_id': fam.id,
+            'orden': 1, 'accion': 'add',
+        })
+        # Ultimo paso tipo O auto-avance → debe ir a rodados
+        assert response.status_code == 302
+        assert '/rodados/0/' in response.url

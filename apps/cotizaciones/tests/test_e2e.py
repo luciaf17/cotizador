@@ -159,8 +159,8 @@ class TestFlujoCompletoE2E:
             'familia_id': s['fam_tanques'].id,
             'orden': 1, 'accion': 'add',
         })
-        # No auto-avanza porque hay 2+ ordenes y tipo O con 1 familia → auto-avance al paso 2
-        assert response.status_code == 200  # HX-Redirect
+        # Tipo O con 1 familia → auto-avance al paso 2 (redirect)
+        assert response.status_code == 302
         assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1
 
         # Paso 2: seleccionar Baulera 750 (tipo Y, redirect al mismo paso)
@@ -259,7 +259,7 @@ class TestFlujoCompletoE2E:
 @pytest.mark.django_db
 class TestRodadosE2E:
     def test_rodados_aparecen_despues_del_ultimo_paso(self, e2e_setup):
-        """Despues de chasis, el Continuar lleva a rodados."""
+        """Al seleccionar chasis en el ultimo paso, redirige a rodados."""
         s = e2e_setup
         cot = _crear_cotizacion(s)
 
@@ -275,10 +275,19 @@ class TestRodadosE2E:
             'orden': 2, 'accion': 'add',
         })
 
-        # Verificar que el boton continuar del paso 3 apunta a rodados
+        # Paso 3 tiene 2 familias (Chasis 1 Eje, Chasis 2 Ejes) → no auto-avanza
+        # Al seleccionar chasis, redirige al mismo paso 3
+        response = s['client'].post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['chasis_l4000'].id,
+            'familia_id': s['fam_chasis_2ejes'].id,
+            'orden': 3, 'accion': 'add',
+        })
+        assert response.status_code == 302
+
+        # Ahora con chasis seleccionado, paso 3 muestra Continuar → rodados
         response = s['client'].get(f'/{cot.id}/paso/3/')
         content = response.content.decode()
-        assert '/rodados/0/' in content or 'bonificaciones' in content
+        assert '/rodados/0/' in content
 
     def test_rodados_filtran_llantas_por_centro(self, e2e_setup):
         """Solo llantas compatibles con el centro del chasis aparecen."""

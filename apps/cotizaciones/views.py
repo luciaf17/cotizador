@@ -135,6 +135,15 @@ def _build_paso_context(cotizacion, orden, tenant):
     auto_avance = todas_tipo_o and una_sola_familia
     mostrar_continuar = not auto_avance
 
+    # Verificar si falta selección obligatoria (para deshabilitar Continuar)
+    # Solo cuenta si la familia tiene productos disponibles — si no hay
+    # productos (filtrados por propiedades), no se puede seleccionar nada.
+    falta_obligatorio = False
+    for fd in familias_data:
+        if fd['familia'].obligatoria == 'SI' and fd['productos'] and not fd['seleccionados']:
+            falta_obligatorio = True
+            break
+
     # Determinar URL de "Continuar"
     if has_next:
         continuar_url = f'/{cotizacion.id}/paso/{next_orden}/'
@@ -158,6 +167,7 @@ def _build_paso_context(cotizacion, orden, tenant):
         'has_next': has_next,
         'next_orden': next_orden,
         'mostrar_continuar': mostrar_continuar,
+        'falta_obligatorio': falta_obligatorio,
         'continuar_url': continuar_url,
         'es_rodado': False,
         'items_resumen': items_resumen,
@@ -335,7 +345,7 @@ def seleccionar_producto(request, cotizacion_id):
             iva_porcentaje=producto.iva_porcentaje,
         )
 
-    # Auto-avance: tipo O con una sola familia en el orden
+    # Determinar siguiente destino
     familias_del_orden = Familia.objects.filter(
         implemento=cotizacion.implemento, orden=orden,
     )
@@ -347,19 +357,16 @@ def seleccionar_producto(request, cotizacion_id):
         ordenes = _get_ordenes(cotizacion.implemento)
         current_idx = ordenes.index(orden) if orden in ordenes else 0
         if current_idx + 1 < len(ordenes):
-            url = f'/{cotizacion.id}/paso/{ordenes[current_idx + 1]}/'
+            return redirect('cotizacion_paso', cotizacion_id=cotizacion_id, orden=ordenes[current_idx + 1])
         else:
-            # Último orden: verificar rodados
             sel = _get_selected_ids(cotizacion)
             acum = calcular_dimensiones(sel)
             rodados = get_rodados_para_implemento(cotizacion.implemento, sel, acum)
             if rodados:
-                url = f'/{cotizacion.id}/rodados/0/'
-            else:
-                url = f'/{cotizacion.id}/bonificaciones/'
-        return HttpResponse(status=200, headers={'HX-Redirect': url})
+                return redirect('cotizacion_rodados', cotizacion_id=cotizacion_id, familia_idx=0)
+            return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion_id)
 
-    # No auto-avance: recargar paso completo (incluye sidebar dimensiones)
+    # No auto-avance: recargar paso completo
     return redirect('cotizacion_paso', cotizacion_id=cotizacion_id, orden=orden)
 
 
