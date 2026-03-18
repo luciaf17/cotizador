@@ -651,3 +651,23 @@ def aprobar(request, cotizacion_id):
         return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
+
+
+@login_required
+def descargar_pdf(request, cotizacion_id):
+    from django.template.loader import render_to_string
+    from apps.precios.views import _generate_pdf
+    tenant = _get_tenant()
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+    items = cotizacion.items.select_related('producto', 'familia').all()
+
+    html = render_to_string('pdf/cotizacion.html', {
+        'cotizacion': cotizacion,
+        'items': items,
+        'tenant': tenant,
+    })
+
+    pdf_bytes = _generate_pdf(html)
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{cotizacion.numero}.pdf"'
+    return response

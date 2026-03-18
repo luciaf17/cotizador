@@ -30,4 +30,6 @@ urlpatterns = [
     path('<int:cotizacion_id>/resumen/', views.resumen, name='cotizacion_resumen'),
     # Aprobar
     path('<int:cotizacion_id>/aprobar/', views.aprobar, name='cotizacion_aprobar'),
+    # PDF
+    path('<int:cotizacion_id>/pdf/', views.descargar_pdf, name='cotizacion_pdf'),
 ]
