@@ -599,6 +599,7 @@ def bonificaciones(request, cotizacion_id):
         'bonif_pago_max': bonif_pago_max,
         'subtotal_bruto': subtotal_bruto,
         'bonif_cliente_default': bonif_cliente_max,
+        'fecha_min': date.today().isoformat(),
     })
 
 
