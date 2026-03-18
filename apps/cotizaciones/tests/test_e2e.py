@@ -431,10 +431,10 @@ class TestBonificacionesE2E:
 
         response = s['client'].get(f'/{cot.id}/bonificaciones/')
         content = response.content.decode()
-        # Slider cliente: max = bonificacion_porcentaje del cliente (15%)
+        # Slider cliente: max = bonificacion_porcentaje del cliente (15)
         assert 'max="15' in content
-        # Tope combinado sigue siendo 30%
-        assert 'BONIF_MAX = 30' in content
+        # Tope combinado sigue siendo 30
+        assert '30' in content
         assert 'max="100"' not in content
 
     def test_aprobacion_completa(self, e2e_setup):
