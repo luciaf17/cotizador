@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -54,6 +55,7 @@ def _get_selected_ids(cotizacion):
 # ── Inicio: selección de cliente ─────────────────────────────────────
 
 
+@login_required
 def inicio(request):
     tenant = _get_tenant()
     tipos_cliente = TipoCliente.objects.filter(tenant=tenant) if tenant else []
@@ -62,6 +64,7 @@ def inicio(request):
     })
 
 
+@login_required
 def buscar_clientes(request):
     tenant = _get_tenant()
     q = request.GET.get('q', '').strip()
@@ -78,6 +81,7 @@ def buscar_clientes(request):
     })
 
 
+@login_required
 def crear_cliente(request):
     tenant = _get_tenant()
     if request.method == 'POST':
@@ -110,6 +114,7 @@ def crear_cliente(request):
 # ── Selección de implemento ──────────────────────────────────────────
 
 
+@login_required
 def seleccionar_implemento(request, cliente_id):
     tenant = _get_tenant()
     cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
@@ -123,6 +128,7 @@ def seleccionar_implemento(request, cliente_id):
 # ── Crear cotización y empezar flujo ─────────────────────────────────
 
 
+@login_required
 def cotizacion_nueva(request, cliente_id, implemento_id):
     tenant = _get_tenant()
     cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
@@ -146,7 +152,7 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
     cotizacion = Cotizacion.objects.create(
         tenant=tenant,
         implemento=implemento,
-        vendedor=request.user if request.user.is_authenticated else None,
+        vendedor=request.user,
         cliente=cliente,
         lista=lista,
         forma_pago=forma_pago,
@@ -163,6 +169,7 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
 # ── Paso step-by-step ────────────────────────────────────────────────
 
 
+@login_required
 def paso(request, cotizacion_id, orden):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
@@ -245,6 +252,7 @@ def paso(request, cotizacion_id, orden):
     return render(request, 'cotizaciones/paso.html', context)
 
 
+@login_required
 def seleccionar_producto(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
@@ -339,6 +347,7 @@ def _avanzar_paso(request, cotizacion, orden):
 # ── Bonificaciones ───────────────────────────────────────────────────
 
 
+@login_required
 def bonificaciones(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
@@ -395,6 +404,7 @@ def bonificaciones(request, cotizacion_id):
     })
 
 
+@login_required
 def calcular_preview(request, cotizacion_id):
     """HTMX endpoint para preview de totales en vivo."""
     tenant = _get_tenant()
@@ -415,6 +425,7 @@ def calcular_preview(request, cotizacion_id):
 # ── Resumen ──────────────────────────────────────────────────────────
 
 
+@login_required
 def resumen(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
@@ -429,6 +440,7 @@ def resumen(request, cotizacion_id):
 # ── Aprobar ──────────────────────────────────────────────────────────
 
 
+@login_required
 def aprobar(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
