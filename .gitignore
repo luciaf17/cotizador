@@ -18,9 +18,10 @@ staticfiles/
 .env
 .env.local
 
-# IDE
+# IDE / Tools
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
