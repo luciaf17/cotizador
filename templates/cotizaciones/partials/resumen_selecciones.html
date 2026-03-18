@@ -1,0 +1,41 @@
+{% if items_resumen %}
+<div class="card" style="padding: 24px; backdrop-filter: blur(8px); margin-top: 16px;">
+    <h3 style="color: #f1f5f9; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Seleccionados</h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for ir in items_resumen %}
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="flex: 1; min-width: 0;">
+                <div style="color: #e2e8f0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ ir.item.producto.nombre }}
+                </div>
+                <div style="color: #64748b; font-size: 11px;">
+                    {{ ir.item.familia.nombre }}
+                    {% if ir.item.cantidad > 1 %} &middot; x{{ ir.item.cantidad }}{% endif %}
+                </div>
+            </div>
+            {% if ir.puede_quitar %}
+            <form method="post" action="{% url 'quitar_item' cotizacion_id=cotizacion.id item_id=ir.item.id %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit"
+                        style="width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(239,68,68,0.2);
+                               background: rgba(239,68,68,0.1); color: #f87171; font-size: 11px; cursor: pointer;
+                               display: flex; align-items: center; justify-content: center; padding: 0; font-family: inherit;"
+                        title="Quitar {{ ir.item.producto.nombre }}">&#10005;</button>
+            </form>
+            {% else %}
+            <div style="width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.06);
+                        background: rgba(255,255,255,0.02); color: #475569; font-size: 9px;
+                        display: flex; align-items: center; justify-content: center;"
+                 title="No se puede quitar (familia obligatoria)">&#128274;</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% if items_resumen %}
+    <div class="divider" style="margin: 12px 0 8px;"></div>
+    <div style="display: flex; justify-content: space-between;">
+        <span style="color: #94a3b8; font-size: 12px;">{{ items_resumen|length }} item{{ items_resumen|length|pluralize:"es" }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

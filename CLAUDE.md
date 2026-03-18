@@ -3,6 +3,11 @@
 ## Proyecto
 Cotizador multicliente para Metalúrgica Ceibo (y futuros clientes). Configurador de implementos agrícolas por pasos con validación dimensional, bonificaciones en cascada, IVA por producto, y generación de PDF.
 
+## Reglas
+Para cada fase que tenga UI: además de tests unitarios, escribir tests de integración que verifiquen el flujo completo desde la vista, con datos reales, comprobando que los resultados sean los esperados (no solo que la página cargue con status 200).
+
+Antes de dar por completada una fase: correr el servidor y hacer UN recorrido manual completo del happy path. Si algo visual no funciona como dice el SPEC.md, no está terminada.
+
 ## Stack
 - **Python 3.12+**
 - **Django 5.1+**
@@ -283,6 +288,36 @@ jobs:
 - `Cotizacion`: id, tenant(fk), implemento(fk), vendedor(fk user), cliente(fk), lista(fk), forma_pago(fk), numero(uk), subtotal_bruto, bonif_cliente_pct/monto, bonif_pago_pct/monto, subtotal_neto, iva_105_base/monto, iva_21_base/monto, iva_total, precio_total, fecha_entrega, estado(borrador/aprobada/confirmada), confirmada_por(fk user), pdf_url, notas
 - `CotizacionItem`: id, cotizacion(fk), producto(fk), familia(fk), cantidad, precio_unitario, precio_linea, iva_porcentaje
 - `CotizacionDimension`: id, cotizacion(fk), propiedad(fk), valor_acumulado
+
+## Diseño y Estética (UI)
+
+**IMPORTANTE**: El archivo `design/cotizador_prototipo.jsx` contiene el prototipo visual de referencia. TODA la UI del proyecto debe seguir esta estética. No inventar estilos propios.
+
+### Principios de diseño (extraídos del prototipo)
+- **Dark theme**: Background `#0f172a` → `#131c2e` (gradiente sutil). NO usar temas claros.
+- **Font**: DM Sans (Google Fonts) para todo. Pesos: 400, 500, 600, 700.
+- **Cards**: `background: rgba(255,255,255,0.03)`, `border: 1px solid rgba(255,255,255,0.06)`, `border-radius: 14px`. Hover: `border-color: rgba(59,130,246,0.4)`.
+- **Selección activa**: `background: rgba(59,130,246,0.12)`, `border: 1.5px solid rgba(59,130,246,0.5)`.
+- **Botones primarios**: `background: linear-gradient(135deg, #3b82f6, #2563eb)`, blanco, `border-radius: 10px`.
+- **Botones secundarios**: `background: transparent`, `border: 1px solid rgba(255,255,255,0.1)`, `color: #94a3b8`.
+- **Botones peligro**: `background: rgba(239,68,68,0.1)`, `color: #f87171`.
+- **Botones éxito**: `background: rgba(34,197,94,0.15)`, `color: #22c55e`.
+- **Textos**: Títulos `#f1f5f9`, cuerpo `#e2e8f0`, secundario `#94a3b8`, dim `#64748b`.
+- **Accent colors**: Azul `#60a5fa` / `#3b82f6`, Verde `#22c55e`, Rojo `#f87171`.
+- **Stepper**: Círculos numerados, activo con gradiente azul, completado con check verde, pendiente gris.
+- **Inputs**: `background: rgba(255,255,255,0.05)`, `border: 1px solid rgba(255,255,255,0.1)`, `border-radius: 10px`, `color: #f1f5f9`.
+- **Radio/Checkbox custom**: Círculo (radio) o cuadrado redondeado (checkbox), borde `rgba(255,255,255,0.2)`, seleccionado `#3b82f6` con check blanco.
+- **Sidebar resumen**: `position: sticky`, `top: 80px`, card con backdrop-filter blur.
+- **Slider bonificación**: `accent-color: #3b82f6`, valor en `#60a5fa` bold.
+- **Toast notificaciones**: Fixed top-right, borde verde sutil, `animation: fadeIn`.
+- **Labels**: `text-transform: uppercase`, `letter-spacing: 0.5px`, `font-size: 12px`, `color: #94a3b8`.
+- **Tablas**: Headers con `background: rgba(255,255,255,0.02)`, filas alternadas sutiles.
+
+### Cómo aplicar a Django templates + HTMX
+- Usar Tailwind CSS clases que repliquen estos valores exactos (custom colors en tailwind.config o inline styles donde Tailwind no alcance).
+- El prototipo es React pero la app es Django templates + HTMX. Traducir la estructura de componentes a partials Django (`{% include %}` o HTMX swaps).
+- Mantener la misma estructura de layout: navbar arriba, contenido centrado max-width 900px, sidebar sticky para resumen.
+- Las transiciones CSS del prototipo (hover, selección) implementarlas con CSS puro o Alpine.js si hace falta estado mínimo.
 
 ## Fases de Desarrollo (Roadmap completo)
 

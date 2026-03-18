@@ -1,5 +1,7 @@
 """Tests para verificar la integridad de los datos importados desde Excel."""
 
+import os
+
 import pytest
 from decimal import Decimal
 
@@ -21,6 +23,12 @@ from apps.precios.models import (
     PrecioProducto,
 )
 from apps.tenants.models import Tenant
+
+EXCEL_PATH = os.path.join('scripts', 'data', 'DBA_Cotizador_Ceibo.xlsx')
+pytestmark = pytest.mark.skipif(
+    not os.path.exists(EXCEL_PATH),
+    reason='Archivo Excel de Ceibo no disponible',
+)
 
 
 @pytest.fixture(scope='session')

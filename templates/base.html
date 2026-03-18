@@ -4,8 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Cotizador{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['"DM Sans"', 'system-ui', 'sans-serif'] },
+            }
+        }
+    }
+    </script>
+    <style>
+        body { font-family: 'DM Sans', system-ui, sans-serif; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline-block; }
+        /* Cards */
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
+        .card:hover { border-color: rgba(59,130,246,0.4); }
+        .card-selected { background: rgba(59,130,246,0.12); border: 1.5px solid rgba(59,130,246,0.5); }
+        /* Inputs */
+        .input-dark {
+            width: 100%; padding: 14px 16px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: #f1f5f9; font-size: 14px; outline: none;
+            box-sizing: border-box; transition: border 0.2s; font-family: inherit;
+            color-scheme: dark;
+        }
+        .input-dark:focus { border-color: rgba(59,130,246,0.5); }
+        .input-dark::placeholder { color: #475569; }
+        select.input-dark option { background: #1e293b; color: #f1f5f9; }
+        /* Buttons */
+        .btn-primary {
+            padding: 12px 28px; background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; font-family: inherit;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        .btn-secondary {
+            padding: 10px 20px; background: transparent; color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-size: 13px;
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: #e2e8f0; }
+        .btn-success {
+            padding: 12px 28px; background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
+        /* Labels */
+        .label-dark {
+            color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; display: block; margin-bottom: 8px;
+        }
+        /* Option items */
+        .option-item {
+            padding: 12px 16px; border-radius: 10px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.2s;
+        }
+        .option-item:hover { border-color: rgba(59,130,246,0.3); }
+        .option-item.selected {
+            background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.35);
+        }
+        /* Custom radio/checkbox */
+        .custom-radio, .custom-check {
+            width: 20px; height: 20px; flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.2); display: flex;
+            align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .custom-radio { border-radius: 50%; }
+        .custom-check { border-radius: 5px; }
+        .custom-radio.active, .custom-check.active {
+            border-color: #3b82f6; background: #3b82f6;
+        }
+        /* Slider */
+        input[type="range"] { accent-color: #3b82f6; }
+        /* Stepper */
+        .step-circle {
+            width: 32px; height: 32px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 13px; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .step-active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; }
+        .step-done { background: rgba(34,197,94,0.2); color: #fff; border: 1px solid rgba(34,197,94,0.3); }
+        .step-pending { background: rgba(255,255,255,0.05); color: #64748b; border: 1px solid rgba(255,255,255,0.1); }
+        /* Badge */
+        .badge-status {
+            font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 500;
+        }
+        .badge-borrador { background: rgba(234,179,8,0.1); color: #facc15; border: 1px solid rgba(234,179,8,0.2); }
+        .badge-aprobada { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+        .badge-confirmada { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+        /* Toast */
+        .toast {
+            position: fixed; top: 76px; right: 28px; z-index: 200;
+            background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+            color: #22c55e; padding: 12px 20px; border-radius: 10px;
+            font-size: 13px; font-weight: 500; animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Divider */
+        .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
+        .divider-blue { height: 1px; background: rgba(59,130,246,0.3); margin: 4px 0; }
+    </style>
 </head>
-<body>
-    {% block content %}{% endblock %}
+<body style="min-height: 100vh; background: linear-gradient(180deg, #0f172a 0%, #131c2e 100%);"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- NAVBAR -->
+    <nav style="background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; z-index: 100;">
+        <div style="max-width: 950px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 60px;">
+            <div style="display: flex; align-items: center; gap: 24px;">
+                <a href="{% url 'cotizacion_inicio' %}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #f1f5f9; font-weight: 700; font-size: 16px; letter-spacing: -0.3px;">Cotizador</span>
+                </a>
+                <div style="display: flex; gap: 4px;">
+                    <a href="{% url 'cotizacion_inicio' %}" style="padding: 8px 16px; background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; font-size: 13px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        Nueva cotizacion
+                    </a>
+                    <a href="{% url 'admin:index' %}" style="padding: 8px 16px; background: transparent; color: #94a3b8; border: 1px solid transparent; border-radius: 8px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                        Admin
+                    </a>
+                </div>
+            </div>
+            {% if user.is_authenticated %}
+            <div style="text-align: right;">
+                <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ user.nombre|default:user.email }}</div>
+                <div style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">{{ user.rol|default:"usuario" }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main style="max-width: 950px; margin: 0 auto; padding: 32px 20px;">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="toast">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
 </body>
 </html>

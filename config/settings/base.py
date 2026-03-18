@@ -71,6 +71,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/'
 
 LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
