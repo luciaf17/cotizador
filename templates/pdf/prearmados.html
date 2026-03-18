@@ -34,7 +34,7 @@
     <img src="{{ logo_url }}" class="logo" alt="{{ tenant.nombre }}">
     {% endif %}
     <h1>{{ tenant.nombre }}</h1>
-    <div class="subtitle">LISTA DE PREARMADOS</div>
+    <div class="subtitle">LISTA DE IMPLEMENTOS</div>
 </div>
 <div class="accent-bar"></div>
 
@@ -44,7 +44,7 @@
 <table>
     <thead>
         <tr>
-            <th>Prearmado</th>
+            <th>Implemento</th>
             <th>Precio</th>
         </tr>
     </thead>
@@ -60,7 +60,7 @@
 {% endfor %}
 
 <div class="footer">
-    {{ tenant.nombre }} &middot; Lista de prearmados #{{ lista.numero }} &middot; Generado automaticamente
+    {{ tenant.nombre }} &middot; Lista de implementos #{{ lista.numero }} &middot; Generado automaticamente
 </div>
 
 </body>
