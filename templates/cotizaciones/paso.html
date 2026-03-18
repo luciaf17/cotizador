@@ -33,15 +33,15 @@
     </div>
 
     <!-- Layout: content + sidebar -->
-    <div style="display: grid; grid-template-columns: 1fr {% if dimensiones %}300px{% endif %}; gap: 28px;">
+    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 28px;">
         <!-- Main content -->
         <div id="paso-content">
             {% include "cotizaciones/partials/paso_content.html" %}
         </div>
 
-        <!-- Sidebar: dimensiones acumuladas -->
-        {% if dimensiones %}
+        <!-- Sidebar -->
         <div style="position: sticky; top: 80px; align-self: start;">
+            {% if dimensiones %}
             <div class="card" style="padding: 24px; backdrop-filter: blur(8px);">
                 <h3 style="color: #f1f5f9; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Dimensiones</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -53,8 +53,10 @@
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
+
+            {% include "cotizaciones/partials/resumen_selecciones.html" %}
         </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -115,6 +115,14 @@ def _build_paso_context(cotizacion, orden, tenant):
 
     dimensiones = _build_dimensiones(acumulado, tenant)
 
+    # Resumen de selecciones: todos los items de la cotización
+    items_resumen = []
+    for item in cotizacion.items.select_related('producto', 'familia').all():
+        items_resumen.append({
+            'item': item,
+            'puede_quitar': item.familia.obligatoria == 'NO',
+        })
+
     # Nav
     has_prev = current_idx > 0
     prev_orden = ordenes[current_idx - 1] if has_prev else None
@@ -152,6 +160,7 @@ def _build_paso_context(cotizacion, orden, tenant):
         'mostrar_continuar': mostrar_continuar,
         'continuar_url': continuar_url,
         'es_rodado': False,
+        'items_resumen': items_resumen,
     }
 
 
@@ -354,6 +363,22 @@ def seleccionar_producto(request, cotizacion_id):
     return redirect('cotizacion_paso', cotizacion_id=cotizacion_id, orden=orden)
 
 
+@login_required
+def quitar_item(request, cotizacion_id, item_id):
+    """Quitar un item desde el resumen lateral (solo familias con obligatoria=NO)."""
+    tenant = _get_tenant()
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    if request.method == 'POST':
+        item = get_object_or_404(CotizacionItem, id=item_id, cotizacion=cotizacion)
+        if item.familia.obligatoria == 'NO':
+            orden = item.familia.orden
+            item.delete()
+            return redirect('cotizacion_paso', cotizacion_id=cotizacion_id, orden=orden)
+
+    return redirect('cotizacion_inicio')
+
+
 # ── Rodados automáticos ──────────────────────────────────────────────
 
 
@@ -413,6 +438,10 @@ def paso_rodados(request, cotizacion_id, familia_idx):
         'continuar_url': continuar_url,
         'ordenes': ordenes_normales,
         'es_rodado': True,
+        'items_resumen': [
+            {'item': item, 'puede_quitar': item.familia.obligatoria == 'NO'}
+            for item in cotizacion.items.select_related('producto', 'familia').all()
+        ],
     }
 
     return render(request, 'cotizaciones/paso_rodados.html', context)
