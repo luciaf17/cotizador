@@ -30,6 +30,19 @@ class Tenant(TimeStampedModel):
         verbose_name='Bonificación máxima (%)',
     )
     moneda = models.CharField(max_length=3, default='ARS')
+    logo = models.ImageField(
+        upload_to='tenants/logos/',
+        null=True, blank=True,
+        verbose_name='Logo',
+    )
+    color_primario = models.CharField(
+        max_length=7, default='#0f172a',
+        verbose_name='Color primario (header PDF)',
+    )
+    color_secundario = models.CharField(
+        max_length=7, default='#2563eb',
+        verbose_name='Color secundario (acentos PDF)',
+    )
     activo = models.BooleanField(default=True)
 
     class Meta:

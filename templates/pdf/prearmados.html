@@ -6,14 +6,15 @@
 <style>
     @page { size: A4; margin: 20mm; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1e293b; margin: 0; }
-    .header { background: #0f172a; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
+    .header { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
     .header h1 { font-size: 18pt; margin: 0; font-weight: 700; }
     .header .subtitle { color: #94a3b8; font-size: 9pt; margin-top: 4px; }
     .header .right { float: right; text-align: right; color: #94a3b8; font-size: 9pt; }
-    .accent-bar { height: 3px; background: #2563eb; margin: 0 -20mm; }
+    .header .logo { height: 40px; margin-bottom: 6px; }
+    .accent-bar { height: 3px; background: {{ tenant.color_secundario }}; margin: 0 -20mm; }
     h2 { font-size: 14pt; color: #0f172a; margin: 20px 0 12px; }
     table { width: 100%; border-collapse: collapse; margin: 0 0 24px; }
-    thead th { background: #0f172a; color: #f1f5f9; padding: 8px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    thead th { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 8px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
     thead th:last-child { text-align: right; }
     tbody td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; }
     tbody td:last-child { text-align: right; font-weight: 600; }
@@ -28,6 +29,9 @@
         Lista #{{ lista.numero }}<br>
         {{ fecha|date:"d/m/Y" }}
     </div>
+    {% if tenant.logo %}
+    <img src="{{ tenant.logo.path }}" class="logo" alt="{{ tenant.nombre }}">
+    {% endif %}
     <h1>{{ tenant.nombre }}</h1>
     <div class="subtitle">LISTA DE PREARMADOS</div>
 </div>

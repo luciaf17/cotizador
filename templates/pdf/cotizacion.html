@@ -6,18 +6,19 @@
 <style>
     @page { size: A4; margin: 20mm; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1e293b; margin: 0; }
-    .header { background: #0f172a; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
+    .header { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
     .header h1 { font-size: 18pt; margin: 0; font-weight: 700; }
     .header .subtitle { color: #94a3b8; font-size: 9pt; margin-top: 4px; }
     .header .cotnum { color: #60a5fa; font-size: 12pt; font-weight: 700; margin-top: 6px; }
     .header .right { float: right; text-align: right; color: #94a3b8; font-size: 9pt; line-height: 1.6; }
-    .accent-bar { height: 3px; background: #2563eb; margin: 0 -20mm; }
+    .header .logo { height: 40px; margin-bottom: 6px; }
+    .accent-bar { height: 3px; background: {{ tenant.color_secundario }}; margin: 0 -20mm; }
     .info-box { background: #f1f5f9; border-radius: 4px; padding: 12px 16px; margin: 16px 0; display: flex; justify-content: space-between; }
     .info-box .label { color: #64748b; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
     .info-box .value { font-size: 11pt; font-weight: 700; margin-top: 4px; }
     .info-box .detail { color: #64748b; font-size: 8pt; margin-top: 2px; }
     table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    thead th { background: #0f172a; color: #f1f5f9; padding: 6px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    thead th { background: {{ tenant.color_primario }}; color: #f1f5f9; padding: 6px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
     thead th:last-child { text-align: right; }
     tbody td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; }
     tbody tr:nth-child(even) td { background: #f8fafc; }
@@ -26,8 +27,7 @@
     .totals .line.green { color: #16a34a; }
     .totals .line.muted { color: #64748b; }
     .totals .sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
-    .totals .sep-blue { height: 1px; background: #2563eb; margin: 6px 0; }
-    .total-box { background: #2563eb; color: #fff; border-radius: 4px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .total-box { background: {{ tenant.color_secundario }}; color: #fff; border-radius: 4px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
     .total-box .label { font-size: 11pt; font-weight: 700; }
     .total-box .amount { font-size: 13pt; font-weight: 700; }
     .notes { background: #f8fafc; border-radius: 4px; padding: 12px 16px; margin: 16px 0; }
@@ -44,6 +44,9 @@
         {% if cotizacion.fecha_entrega %}Entrega: {{ cotizacion.fecha_entrega|date:"d/m/Y" }}<br>{% endif %}
         Vendedor: {{ cotizacion.vendedor.nombre|default:cotizacion.vendedor.email }}
     </div>
+    {% if tenant.logo %}
+    <img src="{{ tenant.logo.path }}" class="logo" alt="{{ tenant.nombre }}">
+    {% endif %}
     <h1>{{ tenant.nombre }}</h1>
     <div class="subtitle">COTIZACION</div>
     <div class="cotnum">{{ cotizacion.numero }}</div>
