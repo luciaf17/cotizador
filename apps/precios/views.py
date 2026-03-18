@@ -23,6 +23,15 @@ def _get_tenant():
     return Tenant.objects.filter(activo=True).first()
 
 
+def _get_logo_url(tenant):
+    """Retorna file:// URL del logo para WeasyPrint, o None."""
+    if tenant and tenant.logo:
+        from pathlib import Path
+        path = Path(tenant.logo.path).as_uri()
+        return path
+    return None
+
+
 def _generate_pdf(html_string):
     """Genera PDF desde HTML string con WeasyPrint."""
     from weasyprint import HTML
@@ -103,7 +112,7 @@ def activar_lista_view(request, lista_id):
     tenant = _get_tenant()
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)
 
-    if request.method == 'POST' and lista.estado == 'borrador':
+    if request.method == 'POST' and lista.estado in ('borrador', 'historica'):
         activar_lista(lista)
         messages.success(request, f'Lista #{lista.numero} activada como vigente.')
 
@@ -124,6 +133,7 @@ def generar_pdf_cotizacion(request, cotizacion_id):
         'cotizacion': cotizacion,
         'items': items,
         'tenant': tenant,
+        'logo_url': _get_logo_url(tenant),
     })
 
     pdf_bytes = _generate_pdf(html)
@@ -154,6 +164,7 @@ def generar_pdf_prearmados(request):
         'lista': lista,
         'tenant': tenant,
         'fecha': date.today(),
+        'logo_url': _get_logo_url(tenant),
     })
 
     pdf_bytes = _generate_pdf(html)

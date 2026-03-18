@@ -661,10 +661,12 @@ def descargar_pdf(request, cotizacion_id):
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     items = cotizacion.items.select_related('producto', 'familia').all()
 
+    from apps.precios.views import _get_logo_url
     html = render_to_string('pdf/cotizacion.html', {
         'cotizacion': cotizacion,
         'items': items,
         'tenant': tenant,
+        'logo_url': _get_logo_url(tenant),
     })
 
     pdf_bytes = _generate_pdf(html)

@@ -44,8 +44,8 @@
         {% if cotizacion.fecha_entrega %}Entrega: {{ cotizacion.fecha_entrega|date:"d/m/Y" }}<br>{% endif %}
         Vendedor: {{ cotizacion.vendedor.nombre|default:cotizacion.vendedor.email }}
     </div>
-    {% if tenant.logo %}
-    <img src="{{ tenant.logo.path }}" class="logo" alt="{{ tenant.nombre }}">
+    {% if logo_url %}
+    <img src="{{ logo_url }}" class="logo" alt="{{ tenant.nombre }}">
     {% endif %}
     <h1>{{ tenant.nombre }}</h1>
     <div class="subtitle">COTIZACION</div>
