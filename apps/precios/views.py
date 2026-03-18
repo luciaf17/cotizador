@@ -24,12 +24,19 @@ def _get_tenant():
 
 
 def _get_logo_url(tenant):
-    """Retorna path absoluto del logo para WeasyPrint, o None."""
+    """Retorna data URI PNG base64 del logo para WeasyPrint, o None."""
     if tenant and tenant.logo:
         import os
-        path = tenant.logo.path
-        if os.path.exists(path):
-            return path
+        if not os.path.exists(tenant.logo.path):
+            return None
+        import base64
+        import io
+        from PIL import Image
+        img = Image.open(tenant.logo.path)
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+        return f'data:image/png;base64,{b64}'
     return None
 
 
