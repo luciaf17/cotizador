@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Cotizador{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
@@ -121,8 +122,8 @@
     <nav style="background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); position: sticky; top: 0; z-index: 100;">
         <div style="max-width: 950px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 60px;">
             <div style="display: flex; align-items: center; gap: 24px;">
-                <a href="{% url 'cotizacion_inicio' %}" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                    <span style="color: #f1f5f9; font-weight: 700; font-size: 16px; letter-spacing: -0.3px;">Cotizador</span>
+                <a href="{% url 'cotizacion_inicio' %}" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                    <img src="/static/cotizador_logo.svg" alt="Cotizador" style="height: 28px;">
                 </a>
                 <div style="display: flex; gap: 4px;">
                     <a href="{% url 'cotizacion_inicio' %}" style="padding: 8px 16px; background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; font-size: 13px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
