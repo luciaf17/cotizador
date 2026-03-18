@@ -209,15 +209,25 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
         return []
 
     # Obtener propiedades de rodados del acumulado
+    propiedades = {p.nombre: p for p in Propiedad.objects.filter(tenant=implemento.tenant)}
     props = {
-        p.nombre: acumulado.get(p.id, Decimal('0'))
-        for p in Propiedad.objects.filter(tenant=implemento.tenant)
+        nombre: acumulado.get(p.id, Decimal('0'))
+        for nombre, p in propiedades.items()
     }
 
-    # Cantidades de rodados desde propiedades del chasis
-    cant_llantas = int(props.get('Llantas', 0)) * nivel
-    cant_ejes = int(props.get('Ejes', 0)) * nivel
-    cant_elasticos = int(props.get('Elásticos', 0)) * nivel
+    # Cantidades de rodados desde propiedades del chasis (ya son totales)
+    cant_llantas = int(props.get('Llantas', 0))
+    cant_ejes = int(props.get('Ejes', 0))
+    cant_elasticos = int(props.get('Elásticos', 0))
+
+    # SPEC 3.5: "El peso que soportan las llantas es por unidad de llantas"
+    # Para verificar propiedades de rodados, el peso debe dividirse
+    # por la cantidad de llantas.
+    acumulado_rodados = dict(acumulado)
+    if cant_llantas > 0 and 'Peso' in propiedades:
+        peso_id = propiedades['Peso'].id
+        peso_total = acumulado.get(peso_id, Decimal('0'))
+        acumulado_rodados[peso_id] = peso_total / cant_llantas
 
     familias_rodados = Familia.objects.filter(
         implemento=imp_rodados,
@@ -240,7 +250,7 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
             compat = check_compatibilidad(prod.id, seleccionados_ids)
             if compat == 'NO':
                 continue
-            if check_propiedades(prod.id, acumulado):
+            if check_propiedades(prod.id, acumulado_rodados):
                 productos.append(prod)
 
         resultado.append({

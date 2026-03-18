@@ -81,29 +81,25 @@ def _build_paso_context(cotizacion, orden, tenant):
     # Familias del orden actual
     familias = Familia.objects.filter(implemento=implemento, orden=orden)
 
-    # Productos disponibles agrupados por familia
+    # Productos disponibles (filtrados por compatibilidad y propiedades)
     todos_disponibles = get_productos_disponibles(
         implemento.id, orden, seleccionados_ids, acumulado,
     )
+    ids_disponibles = {p.id for p in todos_disponibles}
+
     familias_data = []
     for familia in familias:
-        productos_familia = [p for p in todos_disponibles if p.familia_id == familia.id]
-
-        # Items ya seleccionados en esta familia (de la DB, no de disponibles)
+        # Items ya seleccionados en esta familia (de la DB)
         seleccionados_familia = set(
             cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
         )
 
-        # Incluir productos seleccionados que ya no están en "disponibles"
-        # (check_compatibilidad oculta productos ya seleccionados)
-        ids_disponibles = {p.id for p in productos_familia}
-        for sel_id in seleccionados_familia:
-            if sel_id not in ids_disponibles:
-                try:
-                    prod_sel = Producto.objects.get(id=sel_id)
-                    productos_familia.append(prod_sel)
-                except Producto.DoesNotExist:
-                    pass
+        # Todos los productos de la familia en orden estable (DB order),
+        # mostrando solo los disponibles + los ya seleccionados
+        productos_familia = []
+        for p in Producto.objects.filter(familia=familia).order_by('orden', 'id'):
+            if p.id in ids_disponibles or p.id in seleccionados_familia:
+                productos_familia.append(p)
 
         precios = dict(
             PrecioProducto.objects.filter(
@@ -428,6 +424,7 @@ def paso_rodados(request, cotizacion_id, familia_idx):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
+    # Recalcular con TODOS los items actuales (incluyendo rodados ya elegidos)
     seleccionados_ids = _get_selected_ids(cotizacion)
     acumulado = calcular_dimensiones(seleccionados_ids)
     rodados = get_rodados_para_implemento(cotizacion.implemento, seleccionados_ids, acumulado)
@@ -440,15 +437,23 @@ def paso_rodados(request, cotizacion_id, familia_idx):
     cantidad = rodado['cantidad']
     productos_disponibles = rodado['productos']
 
+    # Incluir productos ya seleccionados que no están en disponibles
+    seleccionados_familia = set(
+        cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
+    )
+    ids_disp = {p.id for p in productos_disponibles}
+    for sel_id in seleccionados_familia:
+        if sel_id not in ids_disp:
+            try:
+                productos_disponibles.append(Producto.objects.get(id=sel_id))
+            except Producto.DoesNotExist:
+                pass
+
     precios = dict(
         PrecioProducto.objects.filter(
             lista=cotizacion.lista,
             producto_id__in=[p.id for p in productos_disponibles],
         ).values_list('producto_id', 'precio'),
-    )
-
-    seleccionados_familia = set(
-        cotizacion.items.filter(familia=familia).values_list('producto_id', flat=True),
     )
 
     # Determinar URL siguiente

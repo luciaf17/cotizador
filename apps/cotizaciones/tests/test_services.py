@@ -512,7 +512,8 @@ class TestDimensionesMultiplesProductos:
 class TestRodadosConNivelMultiple:
     """Bug 3: rodados con nivel > 1 multiplican cantidades."""
 
-    def test_nivel_rodado_3_multiplica_cantidades(self):
+    def test_cantidad_rodados_viene_del_chasis(self):
+        """La cantidad de rodados es el valor de la propiedad del chasis (no * nivel)."""
         tenant = TenantFactory()
         imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=3)
         imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
@@ -522,10 +523,10 @@ class TestRodadosConNivelMultiple:
         ProductoFactory(tenant=tenant, implemento=imp_rodados, familia=fam_llantas)
 
         chasis = ProductoFactory(tenant=tenant, implemento=imp)
-        ProductoPropiedadFactory(producto=chasis, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('2'))
+        ProductoPropiedadFactory(producto=chasis, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('4'))
 
         acumulado = calcular_dimensiones([chasis.id])
         rodados = get_rodados_para_implemento(imp, [chasis.id], acumulado)
 
-        # 2 llantas * nivel 3 = 6
-        assert rodados[0]['cantidad'] == 6
+        # Cantidad = valor propiedad Llantas del chasis (4), no multiplicado por nivel
+        assert rodados[0]['cantidad'] == 4
