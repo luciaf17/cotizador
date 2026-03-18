@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Lista #{{ lista.numero }}{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Lista #{{ lista.numero }}</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">
+                {{ lista.nombre|default:"" }} &middot;
+                <span class="badge-status badge-{{ lista.estado }}">{{ lista.get_estado_display }}</span>
+                {% if lista.ajuste_pct %} &middot; Ajuste {{ lista.ajuste_pct }}%{% endif %}
+            </p>
+        </div>
+        <a href="{% url 'panel_listas' %}" class="btn-secondary" style="text-decoration: none;">&larr; Volver</a>
+    </div>
+
+    <!-- Busqueda -->
+    <form method="get" style="margin-bottom: 16px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar producto..."
+               class="input-dark" style="max-width: 400px;">
+    </form>
+
+    <!-- Tabla de precios -->
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: grid; grid-template-columns: 1fr 160px {% if lista.estado == 'borrador' %}100px{% endif %}; gap: 12px; padding: 10px 20px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+            <span class="label-dark" style="margin: 0;">Producto</span>
+            <span class="label-dark" style="margin: 0; text-align: right;">Precio</span>
+            {% if lista.estado == 'borrador' %}<span class="label-dark" style="margin: 0; text-align: center;">Accion</span>{% endif %}
+        </div>
+
+        {% for pp in precios %}
+        <div class="card" style="border-radius: 8px; padding: 10px 20px; display: grid; grid-template-columns: 1fr 160px {% if lista.estado == 'borrador' %}100px{% endif %}; gap: 12px; align-items: center;">
+            <div>
+                <span style="color: #f1f5f9; font-size: 13px;">{{ pp.producto.nombre }}</span>
+                {% if pp.producto.cod_comercio %}
+                <span style="color: #475569; font-size: 11px; margin-left: 6px;">{{ pp.producto.cod_comercio }}</span>
+                {% endif %}
+            </div>
+            <span style="color: #e2e8f0; font-size: 14px; font-weight: 600; text-align: right;">{{ pp.precio|precio_ar }}</span>
+            {% if lista.estado == 'borrador' %}
+            <form method="post" action="{% url 'editar_precio' precio_id=pp.id %}" style="margin: 0; display: flex; gap: 4px; justify-content: center;">
+                {% csrf_token %}
+                <input type="number" name="precio" value="{{ pp.precio|stringformat:'g' }}" step="1" min="0"
+                       style="width: 90px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f1f5f9; font-size: 12px; text-align: right; outline: none;">
+                <button type="submit" style="padding: 4px 8px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 11px; cursor: pointer;">OK</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
