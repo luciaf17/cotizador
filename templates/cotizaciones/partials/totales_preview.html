@@ -1,40 +1,41 @@
+{% load formato %}
 <div style="display: flex; flex-direction: column; gap: 12px;">
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #94a3b8; font-size: 14px;">Subtotal Bruto</span>
-        <span style="color: #e2e8f0; font-size: 14px;">${{ totales.subtotal_bruto|floatformat:2 }}</span>
+        <span style="color: #e2e8f0; font-size: 14px;">{{ totales.subtotal_bruto|precio_ar }}</span>
     </div>
     {% if totales.bonif_cliente_monto %}
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #22c55e; font-size: 14px;">Bonificacion cliente ({{ totales.bonif_cliente_pct }}%)</span>
-        <span style="color: #22c55e; font-size: 14px;">-${{ totales.bonif_cliente_monto|floatformat:2 }}</span>
+        <span style="color: #22c55e; font-size: 14px;">-{{ totales.bonif_cliente_monto|precio_ar }}</span>
     </div>
     {% endif %}
     {% if totales.bonif_pago_monto %}
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #22c55e; font-size: 14px;">Bonificacion forma pago ({{ totales.bonif_pago_pct }}%)</span>
-        <span style="color: #22c55e; font-size: 14px;">-${{ totales.bonif_pago_monto|floatformat:2 }}</span>
+        <span style="color: #22c55e; font-size: 14px;">-{{ totales.bonif_pago_monto|precio_ar }}</span>
     </div>
     {% endif %}
     <div class="divider"></div>
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #cbd5e1; font-size: 14px; font-weight: 500;">Subtotal Neto</span>
-        <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ totales.subtotal_neto|floatformat:2 }}</span>
+        <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">{{ totales.subtotal_neto|precio_ar }}</span>
     </div>
     {% if totales.iva_105_monto %}
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #94a3b8; font-size: 14px;">IVA 10.5%</span>
-        <span style="color: #e2e8f0; font-size: 14px;">${{ totales.iva_105_monto|floatformat:2 }}</span>
+        <span style="color: #e2e8f0; font-size: 14px;">{{ totales.iva_105_monto|precio_ar }}</span>
     </div>
     {% endif %}
     {% if totales.iva_21_monto %}
     <div style="display: flex; justify-content: space-between;">
         <span style="color: #94a3b8; font-size: 14px;">IVA 21%</span>
-        <span style="color: #e2e8f0; font-size: 14px;">${{ totales.iva_21_monto|floatformat:2 }}</span>
+        <span style="color: #e2e8f0; font-size: 14px;">{{ totales.iva_21_monto|precio_ar }}</span>
     </div>
     {% endif %}
     <div class="divider-blue"></div>
     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
         <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">TOTAL</span>
-        <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">${{ totales.precio_total|floatformat:2 }}</span>
+        <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">{{ totales.precio_total|precio_ar }}</span>
     </div>
 </div>

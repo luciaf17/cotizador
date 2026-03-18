@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formato %}
 {% block title %}Bonificaciones — Cotizador{% endblock %}
 
 {% block content %}
@@ -16,7 +17,7 @@
         <div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #94a3b8; font-size: 14px;">Subtotal Bruto</span>
-                <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">${{ subtotal_bruto|floatformat:0 }}</span>
+                <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">{{ subtotal_bruto|precio_ar }}</span>
             </div>
         </div>
 

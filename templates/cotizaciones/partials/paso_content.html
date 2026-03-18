@@ -1,3 +1,4 @@
+{% load formato %}
 {% for fdata in familias_data %}
 {% if fdata.productos %}
 <div class="card" style="padding: 20px 24px; margin-bottom: 16px;">
@@ -40,7 +41,7 @@
                 </div>
                 {% if pdata.precio %}
                 <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
-                    ${{ pdata.precio|floatformat:0 }}
+                    {{ pdata.precio|precio_ar }}
                 </span>
                 {% endif %}
             </button>
@@ -66,7 +67,7 @@
                 </div>
                 {% if pdata.precio %}
                 <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
-                    +${{ pdata.precio|floatformat:0 }}
+                    +{{ pdata.precio|precio_ar }}
                 </span>
                 {% endif %}
             </button>

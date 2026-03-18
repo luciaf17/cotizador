@@ -179,7 +179,8 @@ class TestFlujo:
         cot.save()
         response = auth_client.get(f'/{cot.id}/resumen/')
         assert response.status_code == 200
-        assert b'12100' in response.content or b'12,100' in response.content
+        # precio_ar filter: $12.100
+        assert b'$12.100' in response.content
 
     def test_aprobar_cambia_estado(self, auth_client, setup_basico):
         s = setup_basico
@@ -204,7 +205,8 @@ class TestFlujo:
             'bonif_pago_pct': '0',
         })
         assert response.status_code == 200
-        assert b'9000' in response.content or b'9,000' in response.content
+        # precio_ar filter: $9.000
+        assert b'$9.000' in response.content
 
     def test_bonif_max_se_renderiza_en_slider(self, auth_client, setup_basico):
         """Bug 4: el slider debe tener max=bonif_max del tenant, no 100."""
@@ -322,6 +324,39 @@ class TestTipoORadioButtons:
         auth_client.post(f'/{cot.id}/seleccionar/', {
             'producto_id': prod2.id,
             'familia_id': s['familia'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1
+        assert CotizacionItem.objects.get(cotizacion=cot).producto_id == prod2.id
+
+    def test_tipo_o_exclusivo_entre_familias_mismo_orden(self, auth_client, setup_basico):
+        """SPEC 5.2: familias tipo O mismo orden son alternativas mutuamente excluyentes."""
+        s = setup_basico
+        # 2 familias tipo O en orden 1
+        fam2 = FamiliaFactory(
+            tenant=s['tenant'], implemento=s['implemento'],
+            orden=1, tipo_seleccion='O', obligatoria='SI',
+        )
+        prod2 = ProductoFactory(tenant=s['tenant'], implemento=s['implemento'], familia=fam2)
+        PrecioProductoFactory(lista=s['lista'], producto=prod2, precio=Decimal('20000'))
+        # Agregar orden 2 para que no sea auto-avance
+        FamiliaFactory(tenant=s['tenant'], implemento=s['implemento'], orden=2, tipo_seleccion='Y', obligatoria='NO')
+
+        auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
+        cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
+
+        # Seleccionar de familia 1
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': s['producto'].id,
+            'familia_id': s['familia'].id,
+            'orden': 1, 'accion': 'add',
+        })
+        assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1
+
+        # Seleccionar de familia 2 → debe reemplazar el de familia 1
+        auth_client.post(f'/{cot.id}/seleccionar/', {
+            'producto_id': prod2.id,
+            'familia_id': fam2.id,
             'orden': 1, 'accion': 'add',
         })
         assert CotizacionItem.objects.filter(cotizacion=cot).count() == 1

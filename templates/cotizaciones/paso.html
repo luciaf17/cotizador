@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formato %}
 {% block title %}Paso {{ current_idx|add:1 }} — {{ cotizacion.implemento.nombre }}{% endblock %}
 
 {% block content %}
@@ -48,7 +49,7 @@
                     {% for dim in dimensiones %}
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #94a3b8; font-size: 13px;">{{ dim.nombre }}</span>
-                        <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ dim.valor }} {{ dim.unidad }}</span>
+                        <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">{{ dim.valor|dimension_ar }} {{ dim.unidad }}</span>
                     </div>
                     {% endfor %}
                 </div>

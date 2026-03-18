@@ -148,13 +148,26 @@ def _build_paso_context(cotizacion, orden, tenant):
     mostrar_continuar = not auto_avance
 
     # Verificar si falta selección obligatoria (para deshabilitar Continuar)
-    # Solo cuenta si la familia tiene productos disponibles — si no hay
-    # productos (filtrados por propiedades), no se puede seleccionar nada.
+    # Familias tipo O con mismo orden son alternativas mutuamente excluyentes
+    # (SPEC 5.2): seleccionar en UNA satisface la obligatoriedad del grupo.
+    # Familias tipo Y se evalúan individualmente.
     falta_obligatorio = False
-    for fd in familias_data:
-        if fd['familia'].obligatoria == 'SI' and fd['productos'] and not fd['seleccionados']:
+    familias_o_obligatorias = [
+        fd for fd in familias_data
+        if fd['familia'].tipo_seleccion == 'O' and fd['familia'].obligatoria == 'SI'
+    ]
+    if familias_o_obligatorias:
+        # Al menos una familia O obligatoria con productos debe tener selección
+        tiene_productos = any(fd['productos'] for fd in familias_o_obligatorias)
+        tiene_seleccion = any(fd['seleccionados'] for fd in familias_o_obligatorias)
+        if tiene_productos and not tiene_seleccion:
             falta_obligatorio = True
-            break
+
+    for fd in familias_data:
+        if fd['familia'].tipo_seleccion == 'Y' and fd['familia'].obligatoria == 'SI':
+            if fd['productos'] and not fd['seleccionados']:
+                falta_obligatorio = True
+                break
 
     # Determinar URL de "Continuar"
     if has_next:
@@ -338,7 +351,15 @@ def seleccionar_producto(request, cotizacion_id):
         cotizacion.items.filter(producto=producto, familia=familia).delete()
     else:
         if familia.tipo_seleccion == 'O':
-            cotizacion.items.filter(familia=familia).delete()
+            # SPEC 5.2: familias tipo O con mismo orden son alternativas
+            # mutuamente excluyentes. Limpiar items de TODAS las familias
+            # tipo O del mismo orden, no solo la familia actual.
+            familias_o_mismo_orden = Familia.objects.filter(
+                implemento=cotizacion.implemento,
+                orden=orden,
+                tipo_seleccion='O',
+            )
+            cotizacion.items.filter(familia__in=familias_o_mismo_orden).delete()
 
         precio = Decimal('0')
         try:

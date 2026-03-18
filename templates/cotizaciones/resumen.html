@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formato %}
 {% block title %}Resumen — {{ cotizacion.numero }}{% endblock %}
 
 {% block content %}
@@ -36,7 +37,7 @@
                     <span style="color: #94a3b8; font-size: 14px;">{{ item.producto.nombre }}</span>
                     <span style="color: #475569; font-size: 12px; margin-left: 8px;">{{ item.familia.nombre }}</span>
                 </div>
-                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ item.precio_linea|floatformat:0 }}</span>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">{{ item.precio_linea|precio_ar }}</span>
             </div>
             {% endfor %}
         </div>
@@ -47,36 +48,36 @@
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #cbd5e1; font-size: 14px; font-weight: 500;">Subtotal</span>
-                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ cotizacion.subtotal_bruto|floatformat:2 }}</span>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">{{ cotizacion.subtotal_bruto|precio_ar }}</span>
             </div>
             {% if cotizacion.bonif_cliente_monto %}
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #22c55e; font-size: 14px;">Bonificacion cliente ({{ cotizacion.bonif_cliente_pct }}%)</span>
-                <span style="color: #22c55e; font-size: 14px;">-${{ cotizacion.bonif_cliente_monto|floatformat:2 }}</span>
+                <span style="color: #22c55e; font-size: 14px;">-{{ cotizacion.bonif_cliente_monto|precio_ar }}</span>
             </div>
             {% endif %}
             {% if cotizacion.bonif_pago_monto %}
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #22c55e; font-size: 14px;">Bonificacion forma pago ({{ cotizacion.bonif_pago_pct }}%)</span>
-                <span style="color: #22c55e; font-size: 14px;">-${{ cotizacion.bonif_pago_monto|floatformat:2 }}</span>
+                <span style="color: #22c55e; font-size: 14px;">-{{ cotizacion.bonif_pago_monto|precio_ar }}</span>
             </div>
             {% endif %}
             {% if cotizacion.bonif_cliente_monto or cotizacion.bonif_pago_monto %}
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #cbd5e1; font-size: 14px; font-weight: 500;">Subtotal bonificado</span>
-                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">${{ cotizacion.subtotal_neto|floatformat:2 }}</span>
+                <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">{{ cotizacion.subtotal_neto|precio_ar }}</span>
             </div>
             {% endif %}
             {% if cotizacion.iva_105_monto %}
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #94a3b8; font-size: 14px;">IVA 10.5%</span>
-                <span style="color: #e2e8f0; font-size: 14px;">${{ cotizacion.iva_105_monto|floatformat:2 }}</span>
+                <span style="color: #e2e8f0; font-size: 14px;">{{ cotizacion.iva_105_monto|precio_ar }}</span>
             </div>
             {% endif %}
             {% if cotizacion.iva_21_monto %}
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #94a3b8; font-size: 14px;">IVA 21%</span>
-                <span style="color: #e2e8f0; font-size: 14px;">${{ cotizacion.iva_21_monto|floatformat:2 }}</span>
+                <span style="color: #e2e8f0; font-size: 14px;">{{ cotizacion.iva_21_monto|precio_ar }}</span>
             </div>
             {% endif %}
 
@@ -84,7 +85,7 @@
 
             <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                 <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">TOTAL</span>
-                <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">${{ cotizacion.precio_total|floatformat:2 }}</span>
+                <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">{{ cotizacion.precio_total|precio_ar }}</span>
             </div>
         </div>
     </div>
