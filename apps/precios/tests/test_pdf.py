@@ -6,7 +6,7 @@ from decimal import Decimal
 try:
     from weasyprint import HTML  # noqa: F401
     HAS_WEASYPRINT = True
-except OSError:
+except (ImportError, OSError):
     HAS_WEASYPRINT = False
 
 pytestmark = pytest.mark.skipif(not HAS_WEASYPRINT, reason='WeasyPrint no disponible (falta GTK/GLib)')
