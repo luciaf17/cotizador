@@ -15,6 +15,6 @@ class TestTenant:
         assert str(tenant) == 'Ceibo'
 
     def test_slug_unique(self):
-        TenantFactory(slug='ceibo')
+        TenantFactory(slug='test-unique-slug')
         with pytest.raises(Exception):
-            TenantFactory(slug='ceibo')
+            TenantFactory(slug='test-unique-slug')
