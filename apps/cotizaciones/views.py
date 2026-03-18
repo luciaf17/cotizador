@@ -587,15 +587,18 @@ def bonificaciones(request, cotizacion_id):
     items_data = _get_items_data(cotizacion)
     subtotal_bruto = sum(Decimal(str(i['precio_linea'])) for i in items_data)
 
+    bonif_cliente_max = float(cotizacion.cliente.bonificacion_porcentaje)
+    forma_pago_actual = cotizacion.forma_pago
+    bonif_pago_max = float(forma_pago_actual.bonificacion_porcentaje) if forma_pago_actual else 0
+
     return render(request, 'cotizaciones/bonificaciones.html', {
         'cotizacion': cotizacion,
         'formas_pago': formas_pago,
         'bonif_max': bonif_max,
+        'bonif_cliente_max': bonif_cliente_max,
+        'bonif_pago_max': bonif_pago_max,
         'subtotal_bruto': subtotal_bruto,
-        'bonif_cliente_default': min(
-            float(cotizacion.cliente.bonificacion_porcentaje),
-            bonif_max,
-        ),
+        'bonif_cliente_default': bonif_cliente_max,
     })
 
 

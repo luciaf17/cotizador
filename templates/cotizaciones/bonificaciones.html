@@ -25,17 +25,17 @@
         <div class="card" style="padding: 24px; margin-bottom: 16px;">
             <!-- Bonif Cliente -->
             <div style="margin-bottom: 24px;">
-                <label class="label-dark">Bonificacion cliente ({{ cotizacion.cliente.tipo_cliente.nombre }})</label>
+                <label class="label-dark">Bonificacion cliente ({{ cotizacion.cliente.tipo_cliente.nombre }} — max {{ bonif_cliente_max }}%)</label>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <input type="range" name="bonif_cliente_pct" id="bonif_cliente"
-                           min="0" max="{{ bonif_max }}" step="0.5"
+                           min="0" max="{{ bonif_cliente_max }}" step="0.5"
                            value="{{ bonif_cliente_default }}"
                            style="flex: 1;"
                            hx-get="{% url 'cotizacion_calcular' cotizacion_id=cotizacion.id %}"
                            hx-trigger="input changed delay:200ms"
                            hx-target="#totales-preview"
                            hx-include="[name='bonif_pago_pct']"
-                           oninput="document.getElementById('bonif_cliente_val').textContent = this.value + '%'">
+                           oninput="enforceMax(this, 'cliente'); document.getElementById('bonif_cliente_val').textContent = this.value + '%'">
                     <span id="bonif_cliente_val" style="color: #60a5fa; font-size: 18px; font-weight: 700; min-width: 55px; text-align: right;">{{ bonif_cliente_default }}%</span>
                 </div>
             </div>
@@ -44,7 +44,7 @@
             <div style="margin-bottom: 24px;">
                 <label class="label-dark">Forma de pago</label>
                 <select name="forma_pago_id" id="forma_pago" class="input-dark"
-                        onchange="var b=this.options[this.selectedIndex].dataset.bonif; document.getElementById('bonif_pago').value=b; document.getElementById('bonif_pago_val').textContent=b+'%'; htmx.trigger(document.getElementById('bonif_pago'),'input');">
+                        onchange="updateFormaPago(this)">
                     {% for fp in formas_pago %}
                     <option value="{{ fp.id }}" data-bonif="{{ fp.bonificacion_porcentaje }}"
                             {% if fp.id == cotizacion.forma_pago_id %}selected{% endif %}>
@@ -56,18 +56,18 @@
 
             <!-- Bonif Pago -->
             <div>
-                <label class="label-dark">Bonificacion forma de pago</label>
+                <label class="label-dark">Bonificacion forma de pago (max <span id="bonif_pago_max_label">{{ bonif_pago_max }}</span>%)</label>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <input type="range" name="bonif_pago_pct" id="bonif_pago"
-                           min="0" max="{{ bonif_max }}" step="0.5"
-                           value="{{ cotizacion.forma_pago.bonificacion_porcentaje }}"
+                           min="0" max="{{ bonif_pago_max }}" step="0.5"
+                           value="{{ bonif_pago_max }}"
                            style="flex: 1;"
                            hx-get="{% url 'cotizacion_calcular' cotizacion_id=cotizacion.id %}"
                            hx-trigger="input changed delay:200ms"
                            hx-target="#totales-preview"
                            hx-include="[name='bonif_cliente_pct']"
-                           oninput="document.getElementById('bonif_pago_val').textContent = this.value + '%'">
-                    <span id="bonif_pago_val" style="color: #60a5fa; font-size: 18px; font-weight: 700; min-width: 55px; text-align: right;">{{ cotizacion.forma_pago.bonificacion_porcentaje }}%</span>
+                           oninput="enforceMax(this, 'pago'); document.getElementById('bonif_pago_val').textContent = this.value + '%'">
+                    <span id="bonif_pago_val" style="color: #60a5fa; font-size: 18px; font-weight: 700; min-width: 55px; text-align: right;">{{ bonif_pago_max }}%</span>
                 </div>
                 <span style="color: #475569; font-size: 11px; margin-top: 8px; display: block;">Tope maximo combinado: {{ bonif_max }}%</span>
             </div>
@@ -100,4 +100,41 @@
         </div>
     </form>
 </div>
+
+<script>
+var BONIF_MAX = {{ bonif_max }};
+
+function enforceMax(slider, which) {
+    var cliente = document.getElementById('bonif_cliente');
+    var pago = document.getElementById('bonif_pago');
+    var vc = parseFloat(cliente.value);
+    var vp = parseFloat(pago.value);
+    var suma = vc + vp;
+
+    if (suma > BONIF_MAX) {
+        if (which === 'cliente') {
+            var nuevo = Math.max(0, BONIF_MAX - vc);
+            pago.value = nuevo;
+            document.getElementById('bonif_pago_val').textContent = nuevo + '%';
+            htmx.trigger(pago, 'input');
+        } else {
+            var nuevo = Math.max(0, BONIF_MAX - vp);
+            cliente.value = nuevo;
+            document.getElementById('bonif_cliente_val').textContent = nuevo + '%';
+            htmx.trigger(cliente, 'input');
+        }
+    }
+}
+
+function updateFormaPago(sel) {
+    var bonif = parseFloat(sel.options[sel.selectedIndex].dataset.bonif);
+    var pago = document.getElementById('bonif_pago');
+    pago.max = bonif;
+    pago.value = bonif;
+    document.getElementById('bonif_pago_val').textContent = bonif + '%';
+    document.getElementById('bonif_pago_max_label').textContent = bonif;
+    enforceMax(pago, 'pago');
+    htmx.trigger(pago, 'input');
+}
+</script>
 {% endblock %}

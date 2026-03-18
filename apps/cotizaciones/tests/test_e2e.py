@@ -418,8 +418,8 @@ class TestBonificacionesE2E:
         total_bonif = cot.bonif_cliente_pct + cot.bonif_pago_pct
         assert total_bonif <= Decimal('30.00')
 
-    def test_slider_max_es_bonif_max_del_tenant(self, e2e_setup):
-        """El slider HTML tiene max=bonif_max, no 100."""
+    def test_slider_max_es_bonif_del_concepto(self, e2e_setup):
+        """Cada slider tiene max del concepto, no 100."""
         s = e2e_setup
         cot = _crear_cotizacion(s)
 
@@ -431,7 +431,10 @@ class TestBonificacionesE2E:
 
         response = s['client'].get(f'/{cot.id}/bonificaciones/')
         content = response.content.decode()
-        assert 'max="30' in content
+        # Slider cliente: max = bonificacion_porcentaje del cliente (15%)
+        assert 'max="15' in content
+        # Tope combinado sigue siendo 30%
+        assert 'BONIF_MAX = 30' in content
         assert 'max="100"' not in content
 
     def test_aprobacion_completa(self, e2e_setup):

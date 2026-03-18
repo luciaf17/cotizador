@@ -208,11 +208,10 @@ class TestFlujo:
         # precio_ar filter: $9.000
         assert b'$9.000' in response.content
 
-    def test_bonif_max_se_renderiza_en_slider(self, auth_client, setup_basico):
-        """Bug 4: el slider debe tener max=bonif_max del tenant, no 100."""
+    def test_bonif_slider_max_es_bonif_del_concepto(self, auth_client, setup_basico):
+        """Cada slider tiene max del concepto (cliente/pago), no 100."""
         s = setup_basico
-        s['tenant'].bonif_max_porcentaje = Decimal('25.00')
-        s['tenant'].save()
+        # Cliente tiene bonificacion_porcentaje=10 (del factory)
         auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
         cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
         CotizacionItem.objects.create(
@@ -223,8 +222,8 @@ class TestFlujo:
         response = auth_client.get(f'/{cot.id}/bonificaciones/')
         assert response.status_code == 200
         content = response.content.decode()
-        # Verify bonif_max appears in slider max attr (not 100)
-        assert 'max="25' in content
+        # Slider cliente max = bonif_porcentaje del cliente (10)
+        assert 'max="10' in content
         assert 'max="100"' not in content
 
     def test_seleccionar_tipo_y_redirige_al_mismo_paso(self, auth_client, setup_basico):
