@@ -24,18 +24,21 @@ def _get_tenant():
 
 
 def _get_logo_url(tenant):
-    """Retorna file:// URL del logo para WeasyPrint, o None."""
+    """Retorna path absoluto del logo para WeasyPrint, o None."""
     if tenant and tenant.logo:
-        from pathlib import Path
-        path = Path(tenant.logo.path).as_uri()
-        return path
+        import os
+        path = tenant.logo.path
+        if os.path.exists(path):
+            return path
     return None
 
 
-def _generate_pdf(html_string):
+def _generate_pdf(html_string, base_url=None):
     """Genera PDF desde HTML string con WeasyPrint."""
     from weasyprint import HTML
-    return HTML(string=html_string).write_pdf()
+    from django.conf import settings
+    burl = base_url or str(settings.BASE_DIR)
+    return HTML(string=html_string, base_url=burl).write_pdf()
 
 
 # ── Listas de precios ────────────────────────────────────────────────

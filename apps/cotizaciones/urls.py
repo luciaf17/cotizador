@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     # Inicio: selección de cliente
     path('', views.inicio, name='cotizacion_inicio'),
+    # Historial
+    path('historial/', views.historial, name='cotizacion_historial'),
     # Buscar clientes (HTMX)
     path('buscar-clientes/', views.buscar_clientes, name='buscar_clientes'),
     # Crear cliente inline (HTMX)

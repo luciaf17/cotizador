@@ -625,6 +625,37 @@ def calcular_preview(request, cotizacion_id):
 
 
 @login_required
+def historial(request):
+    tenant = _get_tenant()
+    cotizaciones = Cotizacion.objects.filter(tenant=tenant).select_related(
+        'cliente', 'implemento', 'vendedor',
+    ).order_by('-created_at')
+
+    # Filtros
+    estado = request.GET.get('estado', '')
+    if estado:
+        cotizaciones = cotizaciones.filter(estado=estado)
+    implemento_id = request.GET.get('implemento', '')
+    if implemento_id:
+        cotizaciones = cotizaciones.filter(implemento_id=implemento_id)
+    q = request.GET.get('q', '').strip()
+    if q:
+        cotizaciones = cotizaciones.filter(
+            Q(numero__icontains=q) | Q(cliente__nombre__icontains=q) | Q(vendedor__nombre__icontains=q),
+        )
+
+    implementos = Implemento.objects.filter(tenant=tenant)
+
+    return render(request, 'cotizaciones/historial.html', {
+        'cotizaciones': cotizaciones[:50],
+        'implementos': implementos,
+        'filtro_estado': estado,
+        'filtro_implemento': implemento_id,
+        'filtro_q': q,
+    })
+
+
+@login_required
 def resumen(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
