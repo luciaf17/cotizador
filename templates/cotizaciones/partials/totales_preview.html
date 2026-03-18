@@ -1,0 +1,38 @@
+<div class="space-y-3">
+    <div class="flex justify-between text-sm">
+        <span class="text-gray-600">Subtotal Bruto</span>
+        <span class="font-medium">${{ totales.subtotal_bruto|floatformat:2 }}</span>
+    </div>
+    {% if totales.bonif_cliente_monto %}
+    <div class="flex justify-between text-sm text-green-700">
+        <span>Bonif. Cliente ({{ totales.bonif_cliente_pct }}%)</span>
+        <span>-${{ totales.bonif_cliente_monto|floatformat:2 }}</span>
+    </div>
+    {% endif %}
+    {% if totales.bonif_pago_monto %}
+    <div class="flex justify-between text-sm text-green-700">
+        <span>Bonif. Forma Pago ({{ totales.bonif_pago_pct }}%)</span>
+        <span>-${{ totales.bonif_pago_monto|floatformat:2 }}</span>
+    </div>
+    {% endif %}
+    <div class="flex justify-between text-sm border-t pt-2">
+        <span class="text-gray-700 font-medium">Subtotal Neto</span>
+        <span class="font-medium">${{ totales.subtotal_neto|floatformat:2 }}</span>
+    </div>
+    {% if totales.iva_105_monto %}
+    <div class="flex justify-between text-sm text-gray-600">
+        <span>IVA 10.5% (base ${{ totales.iva_105_base|floatformat:2 }})</span>
+        <span>${{ totales.iva_105_monto|floatformat:2 }}</span>
+    </div>
+    {% endif %}
+    {% if totales.iva_21_monto %}
+    <div class="flex justify-between text-sm text-gray-600">
+        <span>IVA 21% (base ${{ totales.iva_21_base|floatformat:2 }})</span>
+        <span>${{ totales.iva_21_monto|floatformat:2 }}</span>
+    </div>
+    {% endif %}
+    <div class="flex justify-between text-lg font-bold border-t pt-3">
+        <span>TOTAL</span>
+        <span>${{ totales.precio_total|floatformat:2 }}</span>
+    </div>
+</div>

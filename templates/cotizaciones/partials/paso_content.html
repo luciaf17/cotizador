@@ -1,0 +1,94 @@
+{% for fdata in familias_data %}
+<div class="bg-white shadow rounded-lg p-5 mb-4">
+    <h2 class="text-lg font-semibold text-gray-800 mb-1">{{ fdata.familia.nombre }}</h2>
+    <p class="text-xs text-gray-500 mb-3">
+        {% if fdata.familia.tipo_seleccion == 'O' %}Elegir uno{% else %}Elegir varios{% endif %}
+        {% if fdata.familia.obligatoria == 'NO' %} (opcional){% endif %}
+    </p>
+
+    {% if fdata.familia.tipo_seleccion == 'O' %}
+    <!-- TIPO O: Radio buttons -->
+    <div class="space-y-2">
+        {% if fdata.familia.obligatoria == 'NO' %}
+        <label class="flex items-center gap-3 p-3 rounded-md border cursor-pointer hover:bg-gray-50
+                      {% if not fdata.seleccionados %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}">
+            <input type="radio" name="familia_{{ fdata.familia.id }}" value="" checked
+                   class="text-blue-600">
+            <span class="text-gray-700">Ninguno</span>
+        </label>
+        {% endif %}
+
+        {% for pdata in fdata.productos %}
+        <label class="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-gray-50 transition
+                      {% if pdata.seleccionado %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}"
+               hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
+               hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "add"}'
+               hx-swap="none">
+            <div class="flex items-center gap-3">
+                <input type="radio" name="familia_{{ fdata.familia.id }}"
+                       value="{{ pdata.producto.id }}"
+                       {% if pdata.seleccionado %}checked{% endif %}
+                       class="text-blue-600">
+                <span class="text-gray-900">{{ pdata.producto.nombre }}</span>
+            </div>
+            <span class="text-sm font-medium text-gray-600">
+                {% if pdata.precio %}${{ pdata.precio|floatformat:0 }}{% endif %}
+            </span>
+        </label>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- TIPO Y: Checkboxes -->
+    <div class="space-y-2">
+        {% for pdata in fdata.productos %}
+        <label class="flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-gray-50 transition
+                      {% if pdata.seleccionado %}border-blue-500 bg-blue-50{% else %}border-gray-200{% endif %}">
+            <div class="flex items-center gap-3">
+                <input type="checkbox"
+                       value="{{ pdata.producto.id }}"
+                       {% if pdata.seleccionado %}checked{% endif %}
+                       class="rounded text-blue-600"
+                       hx-post="{% url 'seleccionar_producto' cotizacion_id=cotizacion.id %}"
+                       hx-vals='{"producto_id": "{{ pdata.producto.id }}", "familia_id": "{{ fdata.familia.id }}", "orden": "{{ orden }}", "accion": "{% if pdata.seleccionado %}remove{% else %}add{% endif %}"}'
+                       hx-target="#paso-content"
+                       hx-swap="innerHTML">
+                <span class="text-gray-900">{{ pdata.producto.nombre }}</span>
+            </div>
+            <span class="text-sm font-medium text-gray-600">
+                {% if pdata.precio %}${{ pdata.precio|floatformat:0 }}{% endif %}
+            </span>
+        </label>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% if not familias_data %}
+<div class="bg-white shadow rounded-lg p-5 text-gray-500">
+    No hay productos disponibles para este paso.
+</div>
+{% endif %}
+
+<!-- Navegación -->
+<div class="flex justify-between mt-6">
+    {% if has_prev %}
+    <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=prev_orden %}"
+       class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+        &larr; Anterior
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
+
+    {% for fdata in familias_data %}
+    {% if fdata.familia.tipo_seleccion == 'Y' %}
+    <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
+       class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+       id="btn-siguiente">
+        Siguiente &rarr;
+    </a>
+    {% endif %}
+    {% endfor %}
+</div>

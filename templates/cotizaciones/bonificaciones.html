@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Bonificaciones — Cotizador{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-xl font-bold text-gray-900">Bonificaciones y Forma de Pago</h1>
+        <p class="text-sm text-gray-600">{{ cotizacion.cliente.nombre }} — {{ cotizacion.implemento.nombre }} — {{ cotizacion.numero }}</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="bg-white shadow rounded-lg p-6 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-700 font-medium">Subtotal Bruto</span>
+                <span class="text-xl font-bold text-gray-900">${{ subtotal_bruto|floatformat:2 }}</span>
+            </div>
+
+            <!-- Bonificación Cliente -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Bonificación Cliente ({{ cotizacion.cliente.tipo_cliente.nombre }})
+                </label>
+                <div class="flex items-center gap-4">
+                    <input type="range" name="bonif_cliente_pct" id="bonif_cliente"
+                           min="0" max="{{ bonif_max }}" step="0.5"
+                           value="{{ bonif_cliente_default }}"
+                           class="flex-1"
+                           hx-get="{% url 'cotizacion_calcular' cotizacion_id=cotizacion.id %}"
+                           hx-trigger="input changed delay:200ms"
+                           hx-target="#totales-preview"
+                           hx-include="[name='bonif_pago_pct']">
+                    <span id="bonif_cliente_val" class="text-sm font-medium w-12 text-right">{{ bonif_cliente_default }}%</span>
+                </div>
+            </div>
+
+            <!-- Forma de Pago -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Forma de Pago</label>
+                <select name="forma_pago_id" id="forma_pago"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="document.getElementById('bonif_pago').value = this.options[this.selectedIndex].dataset.bonif; document.getElementById('bonif_pago_val').textContent = this.options[this.selectedIndex].dataset.bonif + '%'; htmx.trigger(document.getElementById('bonif_pago'), 'input');">
+                    {% for fp in formas_pago %}
+                    <option value="{{ fp.id }}" data-bonif="{{ fp.bonificacion_porcentaje }}"
+                            {% if fp.id == cotizacion.forma_pago_id %}selected{% endif %}>
+                        {{ fp.nombre }} ({{ fp.bonificacion_porcentaje }}%)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Bonificación Pago -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Bonificación Forma de Pago</label>
+                <div class="flex items-center gap-4">
+                    <input type="range" name="bonif_pago_pct" id="bonif_pago"
+                           min="0" max="{{ bonif_max }}" step="0.5"
+                           value="{{ cotizacion.forma_pago.bonificacion_porcentaje }}"
+                           class="flex-1"
+                           hx-get="{% url 'cotizacion_calcular' cotizacion_id=cotizacion.id %}"
+                           hx-trigger="input changed delay:200ms"
+                           hx-target="#totales-preview"
+                           hx-include="[name='bonif_cliente_pct']">
+                    <span id="bonif_pago_val" class="text-sm font-medium w-12 text-right">{{ cotizacion.forma_pago.bonificacion_porcentaje }}%</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400">Tope máximo combinado: {{ bonif_max }}%</p>
+        </div>
+
+        <!-- Preview de totales (HTMX) -->
+        <div id="totales-preview" class="bg-white shadow rounded-lg p-6 mb-4">
+            <p class="text-gray-500 text-sm">Ajustá las bonificaciones para ver el desglose.</p>
+        </div>
+
+        <!-- Fecha y Notas -->
+        <div class="bg-white shadow rounded-lg p-6 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Entrega</label>
+                    <input type="date" name="fecha_entrega"
+                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                    <textarea name="notas" rows="2"
+                              class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">{{ cotizacion.notas|default:"" }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between">
+            <a href="{% url 'cotizacion_inicio' %}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                Cancelar
+            </a>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                Ver Resumen
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('bonif_cliente').addEventListener('input', function() {
+    document.getElementById('bonif_cliente_val').textContent = this.value + '%';
+});
+document.getElementById('bonif_pago').addEventListener('input', function() {
+    document.getElementById('bonif_pago_val').textContent = this.value + '%';
+});
+</script>
+{% endblock %}

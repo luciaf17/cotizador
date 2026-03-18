@@ -1,0 +1,18 @@
+{% if clientes %}
+<ul class="divide-y divide-gray-200 border rounded-md">
+    {% for cliente in clientes %}
+    <li>
+        <a href="{% url 'seleccionar_implemento' cliente_id=cliente.id %}"
+           class="block px-4 py-3 hover:bg-gray-50 transition">
+            <div class="font-medium text-gray-900">{{ cliente.nombre }}</div>
+            <div class="text-sm text-gray-500">
+                {{ cliente.tipo_cliente.nombre }} — Bonif: {{ cliente.bonificacion_porcentaje }}%
+                {% if cliente.telefono %} — {{ cliente.telefono }}{% endif %}
+            </div>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% elif q %}
+<p class="text-sm text-gray-500 py-2">No se encontraron clientes para "{{ q }}"</p>
+{% endif %}

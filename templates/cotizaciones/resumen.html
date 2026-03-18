@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Resumen — {{ cotizacion.numero }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ cotizacion.numero }}</h1>
+            <p class="text-sm text-gray-600">
+                {{ cotizacion.implemento.nombre }} —
+                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
+                    {% if cotizacion.estado == 'borrador' %}bg-yellow-100 text-yellow-800
+                    {% elif cotizacion.estado == 'aprobada' %}bg-green-100 text-green-800
+                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ cotizacion.get_estado_display }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Info cliente -->
+    <div class="bg-white shadow rounded-lg p-5 mb-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Cliente</h2>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+            <div><span class="text-gray-500">Nombre:</span> <span class="font-medium">{{ cotizacion.cliente.nombre }}</span></div>
+            <div><span class="text-gray-500">Tipo:</span> {{ cotizacion.cliente.tipo_cliente.nombre }}</div>
+            {% if cotizacion.cliente.telefono %}<div><span class="text-gray-500">Tel:</span> {{ cotizacion.cliente.telefono }}</div>{% endif %}
+            {% if cotizacion.cliente.email %}<div><span class="text-gray-500">Email:</span> {{ cotizacion.cliente.email }}</div>{% endif %}
+        </div>
+    </div>
+
+    <!-- Productos -->
+    <div class="bg-white shadow rounded-lg p-5 mb-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Productos</h2>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b text-left text-gray-500">
+                    <th class="py-2">Producto</th>
+                    <th class="py-2">Familia</th>
+                    <th class="py-2 text-right">Cant</th>
+                    <th class="py-2 text-right">Precio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="border-b last:border-0">
+                    <td class="py-2 text-gray-900">{{ item.producto.nombre }}</td>
+                    <td class="py-2 text-gray-600">{{ item.familia.nombre }}</td>
+                    <td class="py-2 text-right">{{ item.cantidad }}</td>
+                    <td class="py-2 text-right font-medium">${{ item.precio_linea|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Totales -->
+    <div class="bg-white shadow rounded-lg p-5 mb-4">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Totales</h2>
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Subtotal Bruto</span>
+                <span class="font-medium">${{ cotizacion.subtotal_bruto|floatformat:2 }}</span>
+            </div>
+            {% if cotizacion.bonif_cliente_monto %}
+            <div class="flex justify-between text-green-700">
+                <span>Bonif. Cliente ({{ cotizacion.bonif_cliente_pct }}%)</span>
+                <span>-${{ cotizacion.bonif_cliente_monto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            {% if cotizacion.bonif_pago_monto %}
+            <div class="flex justify-between text-green-700">
+                <span>Bonif. Forma Pago ({{ cotizacion.bonif_pago_pct }}%)</span>
+                <span>-${{ cotizacion.bonif_pago_monto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between border-t pt-2">
+                <span class="font-medium">Subtotal Neto</span>
+                <span class="font-medium">${{ cotizacion.subtotal_neto|floatformat:2 }}</span>
+            </div>
+            {% if cotizacion.iva_105_monto %}
+            <div class="flex justify-between text-gray-600">
+                <span>IVA 10.5%</span>
+                <span>${{ cotizacion.iva_105_monto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            {% if cotizacion.iva_21_monto %}
+            <div class="flex justify-between text-gray-600">
+                <span>IVA 21%</span>
+                <span>${{ cotizacion.iva_21_monto|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between border-t pt-3 text-lg font-bold">
+                <span>TOTAL</span>
+                <span>${{ cotizacion.precio_total|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% if cotizacion.fecha_entrega %}
+    <div class="bg-white shadow rounded-lg p-5 mb-4">
+        <div class="text-sm">
+            <span class="text-gray-500">Fecha de entrega:</span>
+            <span class="font-medium">{{ cotizacion.fecha_entrega }}</span>
+        </div>
+        {% if cotizacion.notas %}
+        <div class="text-sm mt-2">
+            <span class="text-gray-500">Notas:</span>
+            {{ cotizacion.notas }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div class="flex justify-between">
+        <a href="{% url 'cotizacion_inicio' %}"
+           class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+            Nueva Cotización
+        </a>
+        {% if cotizacion.estado == 'borrador' %}
+        <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                Aprobar Cotización
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

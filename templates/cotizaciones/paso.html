@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Paso {{ current_idx|add:1 }} — Cotizador{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h1 class="text-xl font-bold text-gray-900">{{ cotizacion.implemento.nombre }}</h1>
+            <p class="text-sm text-gray-600">{{ cotizacion.cliente.nombre }} — {{ cotizacion.numero }}</p>
+        </div>
+        <div class="text-sm text-gray-500">
+            Paso {{ current_idx|add:1 }} de {{ ordenes|length }}
+        </div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+        <div class="bg-blue-600 h-2 rounded-full transition-all"
+             style="width: {% widthratio current_idx ordenes|length 100 %}%"></div>
+    </div>
+
+    <div class="flex gap-6">
+        <!-- Contenido principal -->
+        <div class="flex-1" id="paso-content">
+            {% include "cotizaciones/partials/paso_content.html" %}
+        </div>
+
+        <!-- Sidebar: dimensiones -->
+        {% if dimensiones %}
+        <div class="w-64 shrink-0">
+            <div class="bg-white shadow rounded-lg p-4 sticky top-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Dimensiones Acumuladas</h3>
+                <dl class="space-y-2">
+                    {% for dim in dimensiones %}
+                    <div class="flex justify-between text-sm">
+                        <dt class="text-gray-600">{{ dim.nombre }}</dt>
+                        <dd class="font-medium text-gray-900">{{ dim.valor }} {{ dim.unidad }}</dd>
+                    </div>
+                    {% endfor %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
