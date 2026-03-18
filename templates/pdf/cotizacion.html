@@ -1,0 +1,125 @@
+{% load formato %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 20mm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1e293b; margin: 0; }
+    .header { background: #0f172a; color: #f1f5f9; padding: 20px 24px; margin: -20mm -20mm 0 -20mm; }
+    .header h1 { font-size: 18pt; margin: 0; font-weight: 700; }
+    .header .subtitle { color: #94a3b8; font-size: 9pt; margin-top: 4px; }
+    .header .cotnum { color: #60a5fa; font-size: 12pt; font-weight: 700; margin-top: 6px; }
+    .header .right { float: right; text-align: right; color: #94a3b8; font-size: 9pt; line-height: 1.6; }
+    .accent-bar { height: 3px; background: #2563eb; margin: 0 -20mm; }
+    .info-box { background: #f1f5f9; border-radius: 4px; padding: 12px 16px; margin: 16px 0; display: flex; justify-content: space-between; }
+    .info-box .label { color: #64748b; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    .info-box .value { font-size: 11pt; font-weight: 700; margin-top: 4px; }
+    .info-box .detail { color: #64748b; font-size: 8pt; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    thead th { background: #0f172a; color: #f1f5f9; padding: 6px 12px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    thead th:last-child { text-align: right; }
+    tbody td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; }
+    tbody tr:nth-child(even) td { background: #f8fafc; }
+    .totals { margin: 16px 0; }
+    .totals .line { display: flex; justify-content: space-between; padding: 4px 12px; font-size: 9pt; }
+    .totals .line.green { color: #16a34a; }
+    .totals .line.muted { color: #64748b; }
+    .totals .sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
+    .totals .sep-blue { height: 1px; background: #2563eb; margin: 6px 0; }
+    .total-box { background: #2563eb; color: #fff; border-radius: 4px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .total-box .label { font-size: 11pt; font-weight: 700; }
+    .total-box .amount { font-size: 13pt; font-weight: 700; }
+    .notes { background: #f8fafc; border-radius: 4px; padding: 12px 16px; margin: 16px 0; }
+    .notes .label { color: #64748b; font-size: 8pt; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+    .notes p { margin: 0; font-size: 9pt; color: #475569; line-height: 1.5; }
+    .footer { margin-top: 24px; text-align: center; color: #94a3b8; font-size: 7pt; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="right">
+        Fecha: {{ cotizacion.created_at|date:"d/m/Y" }}<br>
+        {% if cotizacion.fecha_entrega %}Entrega: {{ cotizacion.fecha_entrega|date:"d/m/Y" }}<br>{% endif %}
+        Vendedor: {{ cotizacion.vendedor.nombre|default:cotizacion.vendedor.email }}
+    </div>
+    <h1>{{ tenant.nombre }}</h1>
+    <div class="subtitle">COTIZACION</div>
+    <div class="cotnum">{{ cotizacion.numero }}</div>
+</div>
+<div class="accent-bar"></div>
+
+<div class="info-box">
+    <div>
+        <div class="label">Cliente</div>
+        <div class="value">{{ cotizacion.cliente.nombre }}</div>
+        <div class="detail">
+            {{ cotizacion.cliente.tipo_cliente.nombre }}
+            {% if cotizacion.cliente.telefono %} &middot; {{ cotizacion.cliente.telefono }}{% endif %}
+            {% if cotizacion.cliente.email %} &middot; {{ cotizacion.cliente.email }}{% endif %}
+        </div>
+    </div>
+    <div style="text-align: right;">
+        <div class="label">Implemento</div>
+        <div class="value">{{ cotizacion.implemento.nombre }}</div>
+        <div class="detail">Forma de pago: {{ cotizacion.forma_pago.nombre }}</div>
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Descripcion</th>
+            <th style="text-align: center; width: 60px;">Cant</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.producto.nombre }}</td>
+            <td style="text-align: center;">{{ item.cantidad }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="totals">
+    <div class="line"><span>Subtotal</span><span>{{ cotizacion.subtotal_bruto|precio_ar }}</span></div>
+
+    {% if cotizacion.bonif_cliente_monto %}
+    <div class="line green"><span>Bonificacion cliente ({{ cotizacion.bonif_cliente_pct }}%)</span><span>-{{ cotizacion.bonif_cliente_monto|precio_ar }}</span></div>
+    {% endif %}
+    {% if cotizacion.bonif_pago_monto %}
+    <div class="line green"><span>Bonificacion forma pago ({{ cotizacion.bonif_pago_pct }}%)</span><span>-{{ cotizacion.bonif_pago_monto|precio_ar }}</span></div>
+    {% endif %}
+
+    <div class="sep"></div>
+    <div class="line"><span><strong>Subtotal neto</strong></span><span><strong>{{ cotizacion.subtotal_neto|precio_ar }}</strong></span></div>
+
+    {% if cotizacion.iva_105_monto %}
+    <div class="line muted"><span>IVA 10.5%</span><span>{{ cotizacion.iva_105_monto|precio_ar }}</span></div>
+    {% endif %}
+    {% if cotizacion.iva_21_monto %}
+    <div class="line muted"><span>IVA 21%</span><span>{{ cotizacion.iva_21_monto|precio_ar }}</span></div>
+    {% endif %}
+</div>
+
+<div class="total-box">
+    <span class="label">TOTAL FINAL</span>
+    <span class="amount">{{ cotizacion.precio_total|precio_ar }}</span>
+</div>
+
+{% if cotizacion.notas %}
+<div class="notes">
+    <div class="label">Observaciones</div>
+    <p>{{ cotizacion.notas }}</p>
+</div>
+{% endif %}
+
+<div class="footer">
+    {{ tenant.nombre }} &middot; Documento generado automaticamente &middot; {{ cotizacion.numero }}
+</div>
+
+</body>
+</html>
