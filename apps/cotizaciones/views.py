@@ -485,6 +485,7 @@ def paso_rodados(request, cotizacion_id, familia_idx):
         'continuar_url': continuar_url,
         'ordenes': ordenes_normales,
         'es_rodado': True,
+        'falta_seleccion': familia.obligatoria == 'SI' and not seleccionados_familia and bool(productos_disponibles),
         'items_resumen': [
             {'item': item, 'puede_quitar': item.familia.obligatoria == 'NO'}
             for item in cotizacion.items.select_related('producto', 'familia').all()
@@ -739,40 +740,50 @@ def resumen(request, cotizacion_id):
 
 @login_required
 def aprobar(request, cotizacion_id):
-    """Aprobar cotización (borrador → aprobada)."""
+    """
+    Aprobar cotización (borrador → aprobada).
+    Si vendedor tiene requiere_validacion=true, queda pendiente de aprobación del dueño.
+    Si requiere_validacion=false o es dueño/admin, pasa directo a aprobada.
+    """
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+    user = request.user
 
     if request.method == 'POST' and cotizacion.estado == 'borrador':
         cotizacion.estado = 'aprobada'
         cotizacion.save()
-        messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
+        if user.rol == 'vendedor' and user.requiere_validacion:
+            messages.info(request, f'Cotizacion {cotizacion.numero} enviada. Pendiente de aprobacion del Dueno.')
+        else:
+            messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
+
+    # Dueño/admin aprueba una cotización pendiente de vendedor con requiere_validacion
+    if request.method == 'POST' and cotizacion.estado == 'aprobada':
+        if user.rol in ('admin', 'dueno') or user.is_superuser:
+            # Ya está aprobada, solo confirmar el mensaje
+            messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 
 
 @login_required
 def confirmar(request, cotizacion_id):
-    """Confirmar cotización (aprobada → confirmada). Solo dueño/admin, o vendedor sin requiere_validacion."""
+    """Confirmar cotización (aprobada → confirmada). Vendedor y dueño pueden confirmar."""
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     if request.method == 'POST' and cotizacion.estado == 'aprobada':
         user = request.user
-        puede_confirmar = (
-            user.is_superuser
-            or user.rol in ('admin', 'dueno')
-            or (user.rol == 'vendedor' and not user.requiere_validacion)
-        )
-        if puede_confirmar:
+        # Verificar que la cotización esté realmente aprobada (no pendiente)
+        vendedor_cot = cotizacion.vendedor
+        pendiente = vendedor_cot.requiere_validacion and user.rol == 'vendedor'
+        if not pendiente or user.id != vendedor_cot.id:
             from django.utils import timezone
             cotizacion.estado = 'confirmada'
             cotizacion.confirmada_por = user
             cotizacion.confirmada_at = timezone.now()
             cotizacion.save()
             messages.success(request, f'Cotizacion {cotizacion.numero} confirmada.')
-        else:
-            messages.info(request, 'Cotizacion pendiente de confirmacion por el Dueno.')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 

@@ -84,7 +84,12 @@
             </div>
 
             <div style="display: flex; gap: 12px; margin-top: 28px;">
+                {% if falta_seleccion %}
+                <span class="btn-primary" style="text-decoration: none; opacity: 0.4; cursor: not-allowed;"
+                      title="Selecciona un producto para continuar">Continuar &rarr;</span>
+                {% else %}
                 <a href="{{ continuar_url }}" class="btn-primary" style="text-decoration: none;">Continuar &rarr;</a>
+                {% endif %}
             </div>
         </div>
 
