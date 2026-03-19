@@ -28,30 +28,29 @@
     <!-- Lista -->
     <div style="display: flex; flex-direction: column; gap: 8px;">
         {% for cot in cotizaciones %}
-        <div class="card" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; gap: 24px; align-items: center; flex: 1;">
-                <div style="min-width: 120px;">
-                    <span style="color: #60a5fa; font-size: 13px; font-weight: 600;">{{ cot.numero }}</span>
-                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">{{ cot.created_at|date:"d/m/Y" }}</div>
-                </div>
-                <div style="min-width: 160px;">
-                    <div style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ cot.cliente.nombre }}</div>
-                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">{{ cot.implemento.nombre }}</div>
-                </div>
+        <div class="card" style="padding: 16px 20px;">
+            <!-- Mobile: stack vertical. Desktop: flex row -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0;">
                 <div>
-                    <div style="color: #94a3b8; font-size: 12px;">{{ cot.vendedor.nombre|default:cot.vendedor.email }}</div>
+                    <span style="color: #60a5fa; font-size: 13px; font-weight: 600;">{{ cot.numero }}</span>
+                    <span style="color: #64748b; font-size: 12px; margin-left: 6px;">{{ cot.created_at|date:"d/m/Y" }}</span>
+                </div>
+                <div style="min-width: 0;">
+                    <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ cot.cliente.nombre }}</span>
+                    <span style="color: #64748b; font-size: 12px; margin-left: 6px;">{{ cot.implemento.nombre }}</span>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="text-align: right; min-width: 120px;">
-                    <div style="color: #f1f5f9; font-size: 16px; font-weight: 700;">{{ cot.precio_total|precio_ar }}</div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div>
+                    <span style="color: #f1f5f9; font-size: 15px; font-weight: 700;">{{ cot.precio_total|precio_ar }}</span>
                     {% if cot.estado == 'aprobada' and cot.vendedor.requiere_validacion and not cot.aprobada_por %}
                     <span class="badge-status" style="background: rgba(234,179,8,0.15); color: #facc15; border: 1px solid rgba(234,179,8,0.3);">Pendiente aprobacion</span>
                     {% else %}
                     <span class="badge-status badge-{{ cot.estado }}">{{ cot.get_estado_display }}</span>
                     {% endif %}
                 </div>
-                <div style="display: flex; gap: 6px;">
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                     <a href="{% url 'cotizacion_resumen' cotizacion_id=cot.id %}"
                        style="padding: 6px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Ver</a>
 
@@ -74,6 +73,7 @@
                     </form>
                     {% endif %}
                 </div>
+            </div>
             </div>
         </div>
         {% empty %}
