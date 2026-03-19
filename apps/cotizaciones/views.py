@@ -203,7 +203,7 @@ def _build_paso_context(cotizacion, orden, tenant):
 @login_required
 def inicio(request):
     tenant = _get_tenant()
-    tipos_cliente = TipoCliente.objects.filter(tenant=tenant) if tenant else []
+    tipos_cliente = TipoCliente.objects.filter(tenant=tenant, activo=True) if tenant else []
     return render(request, 'cotizaciones/inicio.html', {
         'tipos_cliente': tipos_cliente,
     })

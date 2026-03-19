@@ -5,8 +5,17 @@
 {% block content %}
 <div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Reportes — Cotizaciones Confirmadas</h2>
-        <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Reportes</h2>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <form method="get" style="margin: 0;">
+                <select name="estado" class="input-dark" style="width: 180px; padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+                    <option value="confirmada" {% if filtro_estado == 'confirmada' %}selected{% endif %}>Solo confirmadas</option>
+                    <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Solo aprobadas</option>
+                    <option value="todas" {% if filtro_estado == 'todas' %}selected{% endif %}>Todas</option>
+                </select>
+            </form>
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
     </div>
 
     <!-- Totales -->
@@ -16,7 +25,7 @@
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Total vendido</div>
         </div>
         <div class="card" style="padding: 20px; text-align: center;">
-            <div style="color: #60a5fa; font-size: 24px; font-weight: 700;">{{ cant_confirmadas }}</div>
+            <div style="color: #60a5fa; font-size: 24px; font-weight: 700;">{{ cant_resultados }}</div>
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Cotizaciones</div>
         </div>
         <div class="card" style="padding: 20px; text-align: center;">

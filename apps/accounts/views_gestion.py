@@ -36,9 +36,10 @@ def dashboard(request):
     vendedores = User.objects.filter(tenant=tenant, activo=True, rol='vendedor').count()
     implementos = Implemento.objects.filter(tenant=tenant).count()
 
-    # Top vendedores por monto confirmado
+    # Top vendedores por monto confirmado (excluir superusers)
     top_vendedores = (
         confirmadas
+        .filter(vendedor__is_superuser=False)
         .values('vendedor__nombre', 'vendedor__email')
         .annotate(total=Sum('precio_total'), cantidad=Count('id'))
         .order_by('-total')[:5]
@@ -135,6 +136,20 @@ def usuario_editar(request, user_id):
     })
 
 
+@login_required
+@rol_requerido('admin', 'dueno')
+def usuario_toggle_activo(request, user_id):
+    tenant = _get_tenant(request)
+    usuario = get_object_or_404(User, id=user_id, tenant=tenant)
+    if request.method == 'POST':
+        usuario.activo = not usuario.activo
+        usuario.is_active = usuario.activo
+        usuario.save()
+        estado = 'activado' if usuario.activo else 'desactivado'
+        messages.success(request, f'Usuario {usuario.nombre} {estado}.')
+    return redirect('usuarios_lista')
+
+
 # ── CRUD Tipos de Cliente ────────────────────────────────────────────
 
 
@@ -155,10 +170,13 @@ def tipo_cliente_guardar(request):
         nombre = request.POST.get('nombre', '').strip()
         bonif = Decimal(request.POST.get('bonificacion_default', '0'))
 
+        activo = request.POST.get('activo') == '1'
+
         if tipo_id:
             tipo = get_object_or_404(TipoCliente, id=tipo_id, tenant=tenant)
             tipo.nombre = nombre
             tipo.bonificacion_default = bonif
+            tipo.activo = activo
             tipo.save()
         else:
             TipoCliente.objects.create(tenant=tenant, nombre=nombre, bonificacion_default=bonif)
@@ -208,27 +226,34 @@ def forma_pago_guardar(request):
 @rol_requerido('admin', 'dueno')
 def reportes(request):
     tenant = _get_tenant(request)
-    confirmadas = Cotizacion.objects.filter(tenant=tenant, estado='confirmada')
 
-    total_monto = confirmadas.aggregate(t=Sum('precio_total'))['t'] or Decimal('0')
-    total_comision = confirmadas.aggregate(t=Sum('comision_monto'))['t'] or Decimal('0')
+    filtro_estado = request.GET.get('estado', 'confirmada')
+    qs = Cotizacion.objects.filter(tenant=tenant)
+    if filtro_estado == 'confirmada':
+        qs = qs.filter(estado='confirmada')
+    elif filtro_estado == 'aprobada':
+        qs = qs.filter(estado='aprobada')
+    # 'todas' = sin filtro de estado
+
+    total_monto = qs.aggregate(t=Sum('precio_total'))['t'] or Decimal('0')
+    total_comision = qs.aggregate(t=Sum('comision_monto'))['t'] or Decimal('0')
 
     por_vendedor = (
-        confirmadas
+        qs
         .values('vendedor__nombre')
         .annotate(monto=Sum('precio_total'), cantidad=Count('id'), comision=Sum('comision_monto'))
         .order_by('-monto')
     )
 
     por_implemento = (
-        confirmadas
+        qs
         .values('implemento__nombre')
         .annotate(monto=Sum('precio_total'), cantidad=Count('id'))
         .order_by('-monto')
     )
 
     por_cliente = (
-        confirmadas
+        qs
         .values('cliente__nombre', 'cliente__tipo_cliente__nombre')
         .annotate(monto=Sum('precio_total'), cantidad=Count('id'))
         .order_by('-monto')[:10]
@@ -237,8 +262,9 @@ def reportes(request):
     return render(request, 'gestion/reportes.html', {
         'total_monto': total_monto,
         'total_comision': total_comision,
-        'cant_confirmadas': confirmadas.count(),
+        'cant_resultados': qs.count(),
         'por_vendedor': por_vendedor,
         'por_implemento': por_implemento,
         'por_cliente': por_cliente,
+        'filtro_estado': filtro_estado,
     })

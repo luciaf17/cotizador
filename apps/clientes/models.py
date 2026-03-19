@@ -9,6 +9,7 @@ class TipoCliente(TenantModel):
         max_digits=5, decimal_places=2, default=0,
         verbose_name='Bonificación default (%)',
     )
+    activo = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'tipos_cliente'

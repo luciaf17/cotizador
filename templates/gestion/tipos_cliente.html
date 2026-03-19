@@ -15,7 +15,14 @@
         <input type="text" name="nombre" value="{{ tipo.nombre }}" class="input-dark" style="flex: 1; padding: 8px 12px; font-size: 13px;">
         <input type="number" name="bonificacion_default" value="{{ tipo.bonificacion_default|stringformat:'.1f' }}" step="0.5" min="0" class="input-dark" style="width: 80px; padding: 8px 12px; font-size: 13px; text-align: right;">
         <span style="color: #64748b; font-size: 13px;">%</span>
+        <label style="color: #cbd5e1; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;">
+            <input type="checkbox" name="activo" value="1" {% if tipo.activo %}checked{% endif %} style="accent-color: #22c55e;">
+            Activo
+        </label>
         <button type="submit" style="padding: 6px 12px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">OK</button>
+        {% if not tipo.activo %}
+        <span class="badge-status badge-historica" style="font-size: 10px;">Inactivo</span>
+        {% endif %}
     </form>
     {% endfor %}
 
