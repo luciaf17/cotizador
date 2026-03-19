@@ -52,13 +52,13 @@
             </div>
             {% if cotizacion.bonif_cliente_monto %}
             <div style="display: flex; justify-content: space-between;">
-                <span style="color: #22c55e; font-size: 14px;">Bonificacion cliente ({{ cotizacion.bonif_cliente_pct }}%)</span>
+                <span style="color: #22c55e; font-size: 14px;">Bonificacion {{ cotizacion.cliente.tipo_cliente.nombre }} ({{ cotizacion.bonif_cliente_pct }}%)</span>
                 <span style="color: #22c55e; font-size: 14px;">-{{ cotizacion.bonif_cliente_monto|precio_ar }}</span>
             </div>
             {% endif %}
             {% if cotizacion.bonif_pago_monto %}
             <div style="display: flex; justify-content: space-between;">
-                <span style="color: #22c55e; font-size: 14px;">Bonificacion forma pago ({{ cotizacion.bonif_pago_pct }}%)</span>
+                <span style="color: #22c55e; font-size: 14px;">Bonificacion {{ cotizacion.forma_pago.nombre }} ({{ cotizacion.bonif_pago_pct }}%)</span>
                 <span style="color: #22c55e; font-size: 14px;">-{{ cotizacion.bonif_pago_monto|precio_ar }}</span>
             </div>
             {% endif %}

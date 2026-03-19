@@ -624,6 +624,7 @@ def calcular_preview(request, cotizacion_id):
 
     return render(request, 'cotizaciones/partials/totales_preview.html', {
         'totales': totales,
+        'cotizacion': cotizacion,
     })
 
 

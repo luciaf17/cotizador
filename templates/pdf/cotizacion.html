@@ -92,10 +92,10 @@
     <div class="line"><span>Subtotal</span><span>{{ cotizacion.subtotal_bruto|precio_ar }}</span></div>
 
     {% if cotizacion.bonif_cliente_monto %}
-    <div class="line green"><span>Bonificacion cliente ({{ cotizacion.bonif_cliente_pct }}%)</span><span>-{{ cotizacion.bonif_cliente_monto|precio_ar }}</span></div>
+    <div class="line green"><span>Bonificacion {{ cotizacion.cliente.tipo_cliente.nombre }} ({{ cotizacion.bonif_cliente_pct }}%)</span><span>-{{ cotizacion.bonif_cliente_monto|precio_ar }}</span></div>
     {% endif %}
     {% if cotizacion.bonif_pago_monto %}
-    <div class="line green"><span>Bonificacion forma pago ({{ cotizacion.bonif_pago_pct }}%)</span><span>-{{ cotizacion.bonif_pago_monto|precio_ar }}</span></div>
+    <div class="line green"><span>Bonificacion {{ cotizacion.forma_pago.nombre }} ({{ cotizacion.bonif_pago_pct }}%)</span><span>-{{ cotizacion.bonif_pago_monto|precio_ar }}</span></div>
     {% endif %}
 
     <div class="sep"></div>

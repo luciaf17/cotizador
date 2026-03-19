@@ -6,13 +6,13 @@
     </div>
     {% if totales.bonif_cliente_monto %}
     <div style="display: flex; justify-content: space-between;">
-        <span style="color: #22c55e; font-size: 14px;">Bonificacion cliente ({{ totales.bonif_cliente_pct }}%)</span>
+        <span style="color: #22c55e; font-size: 14px;">Bonificacion {{ cotizacion.cliente.tipo_cliente.nombre }} ({{ totales.bonif_cliente_pct }}%)</span>
         <span style="color: #22c55e; font-size: 14px;">-{{ totales.bonif_cliente_monto|precio_ar }}</span>
     </div>
     {% endif %}
     {% if totales.bonif_pago_monto %}
     <div style="display: flex; justify-content: space-between;">
-        <span style="color: #22c55e; font-size: 14px;">Bonificacion forma pago ({{ totales.bonif_pago_pct }}%)</span>
+        <span style="color: #22c55e; font-size: 14px;">Bonificacion {{ cotizacion.forma_pago.nombre }} ({{ totales.bonif_pago_pct }}%)</span>
         <span style="color: #22c55e; font-size: 14px;">-{{ totales.bonif_pago_monto|precio_ar }}</span>
     </div>
     {% endif %}
