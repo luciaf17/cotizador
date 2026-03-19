@@ -35,7 +35,7 @@
     <div style="display: grid; grid-template-columns: 1fr 110px 110px 130px 110px {% if lista.estado == 'borrador' %}140px{% endif %}; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px;">
         <span class="label-dark" style="margin: 0;">Producto</span>
         <span class="label-dark" style="margin: 0; text-align: right;">Vigente</span>
-        <span class="label-dark" style="margin: 0; text-align: right;">Ajustado</span>
+        <span class="label-dark" style="margin: 0; text-align: right;">Ajustado{% if lista.ajuste_pct %} (+{{ lista.ajuste_pct }}%){% endif %}</span>
         <span class="label-dark" style="margin: 0; text-align: right;">Actual</span>
         <span class="label-dark" style="margin: 0; text-align: right;">Diferencia</span>
         {% if lista.estado == 'borrador' %}
