@@ -587,18 +587,24 @@ def bonificaciones(request, cotizacion_id):
     items_data = _get_items_data(cotizacion)
     subtotal_bruto = sum(Decimal(str(i['precio_linea'])) for i in items_data)
 
-    bonif_cliente_max = str(cotizacion.cliente.bonificacion_porcentaje)
+    cliente_max = float(cotizacion.cliente.bonificacion_porcentaje)
     forma_pago_actual = cotizacion.forma_pago
-    bonif_pago_max = str(forma_pago_actual.bonificacion_porcentaje) if forma_pago_actual else '0'
+    pago_max = float(forma_pago_actual.bonificacion_porcentaje) if forma_pago_actual else 0
+
+    # Iniciar al 50% de cada rango, redondeado a 0.5
+    cliente_init = round(cliente_max / 2 * 2) / 2
+    pago_init = round(pago_max / 2 * 2) / 2
 
     return render(request, 'cotizaciones/bonificaciones.html', {
         'cotizacion': cotizacion,
         'formas_pago': formas_pago,
         'bonif_max': str(tenant.bonif_max_porcentaje) if tenant else '30',
-        'bonif_cliente_max': bonif_cliente_max,
-        'bonif_pago_max': bonif_pago_max,
+        'bonif_cliente_max': str(cliente_max),
+        'bonif_pago_max': str(pago_max),
+        'bonif_cliente_init': str(cliente_init),
+        'bonif_pago_init': str(pago_init),
         'subtotal_bruto': subtotal_bruto,
-        'bonif_cliente_default': bonif_cliente_max,
+        'forma_pago_nombre': forma_pago_actual.nombre if forma_pago_actual else '',
         'fecha_min': date.today().isoformat(),
     })
 
