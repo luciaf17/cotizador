@@ -21,10 +21,22 @@
                 <div style="color: #f1f5f9; font-size: 16px; font-weight: 600;">{{ cotizacion.implemento.nombre }}</div>
                 <div style="color: #94a3b8; font-size: 13px; margin-top: 2px;">
                     {{ cotizacion.numero }}
+                    {% if pendiente_aprobacion %}
+                    <span class="badge-status" style="margin-left: 6px; background: rgba(234,179,8,0.15); color: #facc15; border: 1px solid rgba(234,179,8,0.3);">Pendiente aprobacion</span>
+                    {% else %}
                     <span class="badge-status badge-{{ cotizacion.estado }}" style="margin-left: 6px;">{{ cotizacion.get_estado_display }}</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
+
+        {% if es_dueno_admin %}
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+            <span style="color: #64748b; font-size: 12px;">Vendedor:</span>
+            <span style="color: #e2e8f0; font-size: 12px; font-weight: 500;">{{ cotizacion.vendedor.nombre }}</span>
+            <span style="color: #64748b; font-size: 12px;">{{ cotizacion.vendedor.email }}</span>
+        </div>
+        {% endif %}
 
         <div class="divider" style="margin: 0 0 20px;"></div>
 
@@ -116,31 +128,44 @@
     {% endif %}
 
     <!-- Acciones -->
-    <div style="display: flex; gap: 12px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
         <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none;">Nueva Cotizacion</a>
+
+        {% if cotizacion.estado != 'borrador' %}
         <a href="{% url 'cotizacion_pdf' cotizacion_id=cotizacion.id %}" target="_blank"
-           style="padding: 12px 20px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+           style="padding: 12px 20px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none;">
             PDF
         </a>
+        {% endif %}
+
         {% if cotizacion.estado == 'borrador' %}
         <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
             {% csrf_token %}
             <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>
         </form>
-        {% elif cotizacion.estado == 'aprobada' %}
-            {% if cotizacion.vendedor.requiere_validacion and user.rol == 'vendedor' and user.id == cotizacion.vendedor_id %}
-            <span style="color: #facc15; font-size: 13px; padding: 12px 20px; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); border-radius: 10px;">
-                Pendiente de aprobacion por el Dueno
-            </span>
-            {% else %}
-            <form method="post" action="{% url 'cotizacion_confirmar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
+
+        {% elif pendiente_aprobacion %}
+            {% if es_dueno_admin %}
+            <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
                 {% csrf_token %}
-                <button type="submit" class="btn-primary" style="width: 100%;">&#10003; Confirmar Cotizacion</button>
+                <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>
             </form>
+            {% else %}
+            <span style="color: #facc15; font-size: 13px; padding: 12px 20px; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); border-radius: 10px; flex: 1; text-align: center;">
+                Pendiente de aprobacion del Dueno
+            </span>
             {% endif %}
+
+        {% elif cotizacion.estado == 'aprobada' %}
+        <form method="post" action="{% url 'cotizacion_confirmar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary" style="width: 100%;">&#10003; Confirmar Cotizacion</button>
+        </form>
+
         {% elif cotizacion.estado == 'confirmada' %}
         <span style="color: #22c55e; font-size: 13px; padding: 12px 20px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 10px;">
             Confirmada{% if cotizacion.confirmada_por %} por {{ cotizacion.confirmada_por.nombre }}{% endif %}
+            {% if cotizacion.confirmada_at %} el {{ cotizacion.confirmada_at|date:"d/m/Y" }}{% endif %}
         </span>
         {% endif %}
     </div>

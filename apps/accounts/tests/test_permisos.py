@@ -89,36 +89,64 @@ class TestFlujoAprobacion:
         client.post(f'/{cot.id}/aprobar/')
         cot.refresh_from_db()
         assert cot.estado == 'aprobada'
+        # Vendedor con requiere_validacion: aprobada_por queda null (pendiente)
+        assert cot.aprobada_por is None
 
-    def test_vendedor_con_validacion_no_puede_confirmar(self, setup):
+    def test_vendedor_sin_validacion_aprobada_por_se_llena(self, setup):
+        s = setup
+        cot = _crear_cotizacion(s, s['vendedor_libre'])
+
+        client = TestClient()
+        client.force_login(s['vendedor_libre'])
+        client.post(f'/{cot.id}/aprobar/')
+        cot.refresh_from_db()
+        assert cot.estado == 'aprobada'
+        assert cot.aprobada_por == s['vendedor_libre']
+
+    def test_confirmar_sin_aprobacion_dueno_no_funciona(self, setup):
+        """Cotización pendiente (aprobada_por=null) no se puede confirmar."""
         s = setup
         cot = _crear_cotizacion(s, s['vendedor'])
-        cot.estado = 'aprobada'
+        cot.estado = 'aprobada'  # sin aprobada_por
         cot.save()
 
         client = TestClient()
         client.force_login(s['vendedor'])
         client.post(f'/{cot.id}/confirmar/')
         cot.refresh_from_db()
-        # Sigue aprobada, no confirmada
-        assert cot.estado == 'aprobada'
+        assert cot.estado == 'aprobada'  # no cambió
 
-    def test_vendedor_sin_validacion_puede_confirmar(self, setup):
+    def test_dueno_aprueba_cotizacion_pendiente(self, setup):
         s = setup
-        cot = _crear_cotizacion(s, s['vendedor_libre'])
-        cot.estado = 'aprobada'
+        cot = _crear_cotizacion(s, s['vendedor'])
+        cot.estado = 'aprobada'  # pendiente (aprobada_por=null)
         cot.save()
 
         client = TestClient()
-        client.force_login(s['vendedor_libre'])
-        client.post(f'/{cot.id}/confirmar/')
+        client.force_login(s['dueno'])
+        client.post(f'/{cot.id}/aprobar/')
         cot.refresh_from_db()
-        assert cot.estado == 'confirmada'
+        assert cot.aprobada_por == s['dueno']
 
-    def test_dueno_puede_confirmar(self, setup):
+    def test_confirmar_despues_de_aprobacion_dueno(self, setup):
         s = setup
         cot = _crear_cotizacion(s, s['vendedor'])
         cot.estado = 'aprobada'
+        cot.aprobada_por = s['dueno']
+        cot.save()
+
+        client = TestClient()
+        client.force_login(s['vendedor'])
+        client.post(f'/{cot.id}/confirmar/')
+        cot.refresh_from_db()
+        assert cot.estado == 'confirmada'
+        assert cot.confirmada_por == s['vendedor']
+
+    def test_dueno_puede_confirmar(self, setup):
+        s = setup
+        cot = _crear_cotizacion(s, s['vendedor_libre'])
+        cot.estado = 'aprobada'
+        cot.aprobada_por = s['vendedor_libre']
         cot.save()
 
         client = TestClient()

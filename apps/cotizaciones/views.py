@@ -728,10 +728,20 @@ def resumen(request, cotizacion_id):
         or request.user.is_superuser
     )
 
+    user = request.user
+    es_dueno_admin = user.rol in ('admin', 'dueno') or user.is_superuser
+    pendiente_aprobacion = (
+        cotizacion.estado == 'aprobada'
+        and cotizacion.vendedor.requiere_validacion
+        and not cotizacion.aprobada_por
+    )
+
     return render(request, 'cotizaciones/resumen.html', {
         'cotizacion': cotizacion,
         'items': items,
         'puede_ver_comision': puede_ver_comision,
+        'es_dueno_admin': es_dueno_admin,
+        'pendiente_aprobacion': pendiente_aprobacion,
     })
 
 
@@ -741,49 +751,53 @@ def resumen(request, cotizacion_id):
 @login_required
 def aprobar(request, cotizacion_id):
     """
-    Aprobar cotización (borrador → aprobada).
-    Si vendedor tiene requiere_validacion=true, queda pendiente de aprobación del dueño.
-    Si requiere_validacion=false o es dueño/admin, pasa directo a aprobada.
+    Aprobar cotización.
+    - borrador → aprobada: cualquier usuario puede aprobar su cotización
+    - aprobada (pendiente) → aprobada (visto bueno): Dueño/Admin da su OK
+      cuando vendedor.requiere_validacion=true
     """
+    from django.utils import timezone
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     user = request.user
 
-    if request.method == 'POST' and cotizacion.estado == 'borrador':
-        cotizacion.estado = 'aprobada'
-        cotizacion.save()
-        if user.rol == 'vendedor' and user.requiere_validacion:
-            messages.info(request, f'Cotizacion {cotizacion.numero} enviada. Pendiente de aprobacion del Dueno.')
-        else:
-            messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
+    if request.method == 'POST':
+        if cotizacion.estado == 'borrador':
+            cotizacion.estado = 'aprobada'
+            # Si no requiere validacion o es dueno/admin, aprobar directamente
+            if not cotizacion.vendedor.requiere_validacion or user.rol in ('admin', 'dueno') or user.is_superuser:
+                cotizacion.aprobada_por = user
+                cotizacion.aprobada_at = timezone.now()
+            cotizacion.save()
+            if cotizacion.aprobada_por:
+                messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
+            else:
+                messages.info(request, f'Cotizacion {cotizacion.numero} enviada. Pendiente de aprobacion del Dueno.')
 
-    # Dueño/admin aprueba una cotización pendiente de vendedor con requiere_validacion
-    if request.method == 'POST' and cotizacion.estado == 'aprobada':
-        if user.rol in ('admin', 'dueno') or user.is_superuser:
-            # Ya está aprobada, solo confirmar el mensaje
-            messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
+        elif cotizacion.estado == 'aprobada' and not cotizacion.aprobada_por:
+            # Dueño da visto bueno a cotización pendiente
+            if user.rol in ('admin', 'dueno') or user.is_superuser:
+                cotizacion.aprobada_por = user
+                cotizacion.aprobada_at = timezone.now()
+                cotizacion.save()
+                messages.success(request, f'Cotizacion {cotizacion.numero} aprobada por {user.nombre}.')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 
 
 @login_required
 def confirmar(request, cotizacion_id):
-    """Confirmar cotización (aprobada → confirmada). Vendedor y dueño pueden confirmar."""
+    """Confirmar cotización (aprobada → confirmada). La venta se concretó."""
+    from django.utils import timezone
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
-    if request.method == 'POST' and cotizacion.estado == 'aprobada':
-        user = request.user
-        # Verificar que la cotización esté realmente aprobada (no pendiente)
-        vendedor_cot = cotizacion.vendedor
-        pendiente = vendedor_cot.requiere_validacion and user.rol == 'vendedor'
-        if not pendiente or user.id != vendedor_cot.id:
-            from django.utils import timezone
-            cotizacion.estado = 'confirmada'
-            cotizacion.confirmada_por = user
-            cotizacion.confirmada_at = timezone.now()
-            cotizacion.save()
-            messages.success(request, f'Cotizacion {cotizacion.numero} confirmada.')
+    if request.method == 'POST' and cotizacion.estado == 'aprobada' and cotizacion.aprobada_por:
+        cotizacion.estado = 'confirmada'
+        cotizacion.confirmada_por = request.user
+        cotizacion.confirmada_at = timezone.now()
+        cotizacion.save()
+        messages.success(request, f'Cotizacion {cotizacion.numero} confirmada.')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 

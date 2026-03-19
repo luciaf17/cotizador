@@ -77,6 +77,11 @@ class Cotizacion(TenantModel):
     estado = models.CharField(
         max_length=10, choices=Estado.choices, default=Estado.BORRADOR,
     )
+    aprobada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='cotizaciones_aprobadas',
+    )
+    aprobada_at = models.DateTimeField(null=True, blank=True)
     confirmada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='cotizaciones_confirmadas',

@@ -45,7 +45,7 @@
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="text-align: right; min-width: 120px;">
                     <div style="color: #f1f5f9; font-size: 16px; font-weight: 700;">{{ cot.precio_total|precio_ar }}</div>
-                    {% if cot.estado == 'aprobada' and cot.vendedor.requiere_validacion %}
+                    {% if cot.estado == 'aprobada' and cot.vendedor.requiere_validacion and not cot.aprobada_por %}
                     <span class="badge-status" style="background: rgba(234,179,8,0.15); color: #facc15; border: 1px solid rgba(234,179,8,0.3);">Pendiente aprobacion</span>
                     {% else %}
                     <span class="badge-status badge-{{ cot.estado }}">{{ cot.get_estado_display }}</span>
@@ -54,15 +54,20 @@
                 <div style="display: flex; gap: 6px;">
                     <a href="{% url 'cotizacion_resumen' cotizacion_id=cot.id %}"
                        style="padding: 6px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Ver</a>
+
+                    {% if cot.estado != 'borrador' %}
                     <a href="{% url 'cotizacion_pdf' cotizacion_id=cot.id %}" target="_blank"
                        style="padding: 6px 12px; background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">PDF</a>
-                    {% if cot.estado == 'aprobada' and cot.vendedor.requiere_validacion and user.rol != 'vendedor' %}
+                    {% endif %}
+
+                    {% if cot.estado == 'aprobada' and cot.vendedor.requiere_validacion and not cot.aprobada_por and user.rol != 'vendedor' %}
                     <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cot.id %}" style="margin: 0;">
                         {% csrf_token %}
                         <button type="submit" style="padding: 6px 12px; background: rgba(234,179,8,0.1); color: #facc15; border: 1px solid rgba(234,179,8,0.2); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Aprobar</button>
                     </form>
                     {% endif %}
-                    {% if cot.estado == 'aprobada' and not cot.vendedor.requiere_validacion or cot.estado == 'aprobada' and user.rol != 'vendedor' %}
+
+                    {% if cot.estado == 'aprobada' and cot.aprobada_por %}
                     <form method="post" action="{% url 'cotizacion_confirmar' cotizacion_id=cot.id %}" style="margin: 0;">
                         {% csrf_token %}
                         <button type="submit" style="padding: 6px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Confirmar</button>
