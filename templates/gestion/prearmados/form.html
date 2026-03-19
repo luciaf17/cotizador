@@ -38,9 +38,7 @@
         <div class="card" style="padding: 24px; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">Estructura (productos)</h3>
-                {% if precio_calculado %}
-                <span style="color: #60a5fa; font-size: 15px; font-weight: 700;">Total: {{ precio_calculado|precio_ar }}</span>
-                {% endif %}
+                <span id="total-calculado" style="color: #60a5fa; font-size: 15px; font-weight: 700;">Total: {{ precio_calculado|precio_ar }}</span>
             </div>
 
             <!-- Header columnas -->
@@ -83,10 +81,44 @@
 </div>
 
 <script>
-var optionsHtml = '';
+var precios = { {% for pp in precios_map %}{{ pp.producto_id }}: {{ pp.precio|stringformat:'.0f' }},{% endfor %} };
+var optionsHtml = '<option value="">Seleccionar...</option>';
 {% for p in productos %}
 optionsHtml += '<option value="{{ p.id }}">{{ p.nombre|escapejs }}</option>';
 {% endfor %}
+
+function fmt(n) {
+    return '$' + Math.round(n).toLocaleString('es-AR');
+}
+
+function recalcular() {
+    var total = 0;
+    document.querySelectorAll('.fila-estructura').forEach(function(row) {
+        var sel = row.querySelector('select');
+        var cant = row.querySelector('input[type="number"]');
+        var spanUnit = row.querySelectorAll('span')[0];
+        var spanSub = row.querySelectorAll('span')[1];
+        var pid = parseInt(sel.value);
+        var c = parseInt(cant.value) || 0;
+        var precio = precios[pid] || 0;
+
+        if (pid && precio) {
+            spanUnit.textContent = fmt(precio);
+            spanUnit.style.color = '#94a3b8';
+            spanSub.textContent = fmt(precio * c);
+            spanSub.style.color = '#e2e8f0';
+            spanSub.style.fontWeight = '500';
+            total += precio * c;
+        } else {
+            spanUnit.textContent = '—';
+            spanUnit.style.color = '#475569';
+            spanSub.textContent = '—';
+            spanSub.style.color = '#475569';
+            spanSub.style.fontWeight = 'normal';
+        }
+    });
+    document.getElementById('total-calculado').textContent = 'Total: ' + fmt(total);
+}
 
 function agregarFila() {
     var container = document.getElementById('estructura');
@@ -94,14 +126,24 @@ function agregarFila() {
     row.className = 'fila-estructura';
     row.style.cssText = 'display: grid; grid-template-columns: 1fr 70px 100px 100px 30px; gap: 8px; align-items: center;';
     row.innerHTML =
-        '<select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">' +
-        '<option value="">Seleccionar...</option>' + optionsHtml + '</select>' +
-        '<input type="number" name="prod_cantidad" value="1" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">' +
+        '<select name="prod_id" class="input-dark" onchange="recalcular()" style="padding: 6px 8px; font-size: 12px;">' + optionsHtml + '</select>' +
+        '<input type="number" name="prod_cantidad" value="1" min="1" oninput="recalcular()" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">' +
         '<span style="color: #475569; font-size: 11px; text-align: right;">—</span>' +
         '<span style="color: #475569; font-size: 11px; text-align: right;">—</span>' +
-        '<button type="button" onclick="this.closest(\'.fila-estructura\').remove()" ' +
+        '<button type="button" onclick="this.closest(\'.fila-estructura\').remove(); recalcular();" ' +
         'style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid rgba(239,68,68,0.2); background: rgba(239,68,68,0.1); color: #f87171; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>';
     container.appendChild(row);
 }
+
+// Bind events on existing rows
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.fila-estructura select').forEach(function(sel) {
+        sel.addEventListener('change', recalcular);
+    });
+    document.querySelectorAll('.fila-estructura input[type="number"]').forEach(function(inp) {
+        inp.addEventListener('input', recalcular);
+    });
+    recalcular();
+});
 </script>
 {% endblock %}

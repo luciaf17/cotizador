@@ -114,10 +114,16 @@ def prearmado_form(request, pre_id=None):
         messages.success(request, f'Prearmado "{nombre}" guardado.')
         return redirect('gestion_prearmados')
 
+    # Mapa de precios para JS (producto_id → precio)
+    precios_map = []
+    if lista:
+        precios_map = list(PrecioProducto.objects.filter(lista=lista).values('producto_id', 'precio'))
+
     return render(request, 'gestion/prearmados/form.html', {
         'prearmado': prearmado,
         'implementos': implementos,
         'productos': productos,
         'estructura': estructura,
         'precio_calculado': precio_calculado,
+        'precios_map': precios_map,
     })
