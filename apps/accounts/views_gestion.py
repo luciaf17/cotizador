@@ -1,0 +1,244 @@
+"""Views de gestión de usuarios y dashboard del dueño."""
+
+from decimal import Decimal
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum, Q
+from django.shortcuts import get_object_or_404, redirect, render
+
+from apps.accounts.decorators import rol_requerido
+from apps.accounts.models import User
+from apps.catalogo.models import Implemento
+from apps.clientes.models import Cliente, FormaPago, TipoCliente
+from apps.cotizaciones.models import Cotizacion
+from apps.tenants.models import Tenant
+
+
+def _get_tenant(request):
+    if hasattr(request, 'tenant') and request.tenant:
+        return request.tenant
+    return Tenant.objects.filter(activo=True).first()
+
+
+# ── Dashboard ────────────────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def dashboard(request):
+    tenant = _get_tenant(request)
+
+    cotizaciones = Cotizacion.objects.filter(tenant=tenant)
+    pendientes = cotizaciones.filter(estado='aprobada', aprobada_por__isnull=True).count()
+    confirmadas = cotizaciones.filter(estado='confirmada')
+    total_confirmadas = confirmadas.aggregate(total=Sum('precio_total'))['total'] or 0
+    vendedores = User.objects.filter(tenant=tenant, activo=True, rol='vendedor').count()
+    implementos = Implemento.objects.filter(tenant=tenant).count()
+
+    # Top vendedores por monto confirmado
+    top_vendedores = (
+        confirmadas
+        .values('vendedor__nombre', 'vendedor__email')
+        .annotate(total=Sum('precio_total'), cantidad=Count('id'))
+        .order_by('-total')[:5]
+    )
+
+    # Top implementos
+    top_implementos = (
+        confirmadas
+        .values('implemento__nombre')
+        .annotate(total=Sum('precio_total'), cantidad=Count('id'))
+        .order_by('-total')[:5]
+    )
+
+    return render(request, 'gestion/dashboard.html', {
+        'pendientes': pendientes,
+        'total_cotizaciones': cotizaciones.count(),
+        'total_confirmadas_monto': total_confirmadas,
+        'cant_confirmadas': confirmadas.count(),
+        'vendedores': vendedores,
+        'implementos': implementos,
+        'top_vendedores': top_vendedores,
+        'top_implementos': top_implementos,
+    })
+
+
+# ── Gestión de usuarios ──────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def usuarios_lista(request):
+    tenant = _get_tenant(request)
+    usuarios = User.objects.filter(tenant=tenant).order_by('rol', 'nombre')
+    return render(request, 'gestion/usuarios_lista.html', {'usuarios': usuarios})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def usuario_crear(request):
+    tenant = _get_tenant(request)
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        nombre = request.POST.get('nombre', '').strip()
+        password = request.POST.get('password', '').strip()
+        rol = request.POST.get('rol', 'vendedor')
+        requiere_validacion = request.POST.get('requiere_validacion') == '1'
+        bonif_max = Decimal(request.POST.get('bonif_max_porcentaje', '0'))
+        comision = Decimal(request.POST.get('comision_porcentaje', '0'))
+
+        if not email or not nombre or not password:
+            messages.error(request, 'Email, nombre y contrasena son obligatorios.')
+            return render(request, 'gestion/usuario_form.html', {'modo': 'crear'})
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Ya existe un usuario con ese email.')
+            return render(request, 'gestion/usuario_form.html', {'modo': 'crear'})
+
+        User.objects.create_user(
+            email=email, password=password, nombre=nombre,
+            tenant=tenant, rol=rol, requiere_validacion=requiere_validacion,
+            bonif_max_porcentaje=bonif_max, comision_porcentaje=comision,
+        )
+        messages.success(request, f'Usuario {nombre} creado.')
+        return redirect('usuarios_lista')
+
+    return render(request, 'gestion/usuario_form.html', {'modo': 'crear'})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def usuario_editar(request, user_id):
+    tenant = _get_tenant(request)
+    usuario = get_object_or_404(User, id=user_id, tenant=tenant)
+
+    if request.method == 'POST':
+        usuario.nombre = request.POST.get('nombre', usuario.nombre)
+        usuario.rol = request.POST.get('rol', usuario.rol)
+        usuario.requiere_validacion = request.POST.get('requiere_validacion') == '1'
+        usuario.bonif_max_porcentaje = Decimal(request.POST.get('bonif_max_porcentaje', '0'))
+        usuario.comision_porcentaje = Decimal(request.POST.get('comision_porcentaje', '0'))
+        usuario.activo = request.POST.get('activo') == '1'
+
+        new_password = request.POST.get('password', '').strip()
+        if new_password:
+            usuario.set_password(new_password)
+
+        usuario.save()
+        messages.success(request, f'Usuario {usuario.nombre} actualizado.')
+        return redirect('usuarios_lista')
+
+    return render(request, 'gestion/usuario_form.html', {
+        'modo': 'editar',
+        'usuario': usuario,
+    })
+
+
+# ── CRUD Tipos de Cliente ────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def tipos_cliente_lista(request):
+    tenant = _get_tenant(request)
+    tipos = TipoCliente.objects.filter(tenant=tenant)
+    return render(request, 'gestion/tipos_cliente.html', {'tipos': tipos})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def tipo_cliente_guardar(request):
+    tenant = _get_tenant(request)
+    if request.method == 'POST':
+        tipo_id = request.POST.get('tipo_id')
+        nombre = request.POST.get('nombre', '').strip()
+        bonif = Decimal(request.POST.get('bonificacion_default', '0'))
+
+        if tipo_id:
+            tipo = get_object_or_404(TipoCliente, id=tipo_id, tenant=tenant)
+            tipo.nombre = nombre
+            tipo.bonificacion_default = bonif
+            tipo.save()
+        else:
+            TipoCliente.objects.create(tenant=tenant, nombre=nombre, bonificacion_default=bonif)
+
+        messages.success(request, f'Tipo de cliente "{nombre}" guardado.')
+    return redirect('tipos_cliente_lista')
+
+
+# ── CRUD Formas de Pago ──────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def formas_pago_lista(request):
+    tenant = _get_tenant(request)
+    formas = FormaPago.objects.filter(tenant=tenant)
+    return render(request, 'gestion/formas_pago.html', {'formas': formas})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def forma_pago_guardar(request):
+    tenant = _get_tenant(request)
+    if request.method == 'POST':
+        fp_id = request.POST.get('forma_id')
+        nombre = request.POST.get('nombre', '').strip()
+        bonif = Decimal(request.POST.get('bonificacion_porcentaje', '0'))
+        activo = request.POST.get('activo') == '1'
+
+        if fp_id:
+            fp = get_object_or_404(FormaPago, id=fp_id, tenant=tenant)
+            fp.nombre = nombre
+            fp.bonificacion_porcentaje = bonif
+            fp.activo = activo
+            fp.save()
+        else:
+            FormaPago.objects.create(tenant=tenant, nombre=nombre, bonificacion_porcentaje=bonif)
+
+        messages.success(request, f'Forma de pago "{nombre}" guardada.')
+    return redirect('formas_pago_lista')
+
+
+# ── Reportes ─────────────────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def reportes(request):
+    tenant = _get_tenant(request)
+    confirmadas = Cotizacion.objects.filter(tenant=tenant, estado='confirmada')
+
+    total_monto = confirmadas.aggregate(t=Sum('precio_total'))['t'] or Decimal('0')
+    total_comision = confirmadas.aggregate(t=Sum('comision_monto'))['t'] or Decimal('0')
+
+    por_vendedor = (
+        confirmadas
+        .values('vendedor__nombre')
+        .annotate(monto=Sum('precio_total'), cantidad=Count('id'), comision=Sum('comision_monto'))
+        .order_by('-monto')
+    )
+
+    por_implemento = (
+        confirmadas
+        .values('implemento__nombre')
+        .annotate(monto=Sum('precio_total'), cantidad=Count('id'))
+        .order_by('-monto')
+    )
+
+    por_cliente = (
+        confirmadas
+        .values('cliente__nombre', 'cliente__tipo_cliente__nombre')
+        .annotate(monto=Sum('precio_total'), cantidad=Count('id'))
+        .order_by('-monto')[:10]
+    )
+
+    return render(request, 'gestion/reportes.html', {
+        'total_monto': total_monto,
+        'total_comision': total_comision,
+        'cant_confirmadas': confirmadas.count(),
+        'por_vendedor': por_vendedor,
+        'por_implemento': por_implemento,
+        'por_cliente': por_cliente,
+    })

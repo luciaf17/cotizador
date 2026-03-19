@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div>
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 24px;">Dashboard</h2>
+
+    <!-- Stats -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px;">
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #60a5fa; font-size: 28px; font-weight: 700;">{{ cant_confirmadas }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Confirmadas</div>
+        </div>
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #22c55e; font-size: 28px; font-weight: 700;">{{ total_confirmadas_monto|precio_ar }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Total vendido</div>
+        </div>
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #facc15; font-size: 28px; font-weight: 700;">{{ pendientes }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Pendientes</div>
+        </div>
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #e2e8f0; font-size: 28px; font-weight: 700;">{{ vendedores }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Vendedores</div>
+        </div>
+    </div>
+
+    <!-- Accesos rapidos -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px;">
+        <a href="{% url 'cotizacion_historial' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Historial Cotizaciones</span>
+        </a>
+        <a href="{% url 'usuarios_lista' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Gestion Usuarios</span>
+        </a>
+        <a href="{% url 'panel_listas' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Listas de Precios</span>
+        </a>
+        <a href="{% url 'tipos_cliente_lista' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Tipos de Cliente</span>
+        </a>
+        <a href="{% url 'formas_pago_lista' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Formas de Pago</span>
+        </a>
+        <a href="{% url 'reportes' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Reportes</span>
+        </a>
+        <a href="{% url 'configuracion_tenant' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Configuracion</span>
+        </a>
+        <a href="{% url 'admin:index' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Admin (catalogo avanzado)</span>
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <!-- Top vendedores -->
+        <div class="card" style="padding: 20px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Top Vendedores</h3>
+            {% for v in top_vendedores %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+                <span style="color: #cbd5e1; font-size: 13px;">{{ v.vendedor__nombre|default:v.vendedor__email }}</span>
+                <div style="text-align: right;">
+                    <span style="color: #22c55e; font-size: 13px; font-weight: 500;">{{ v.total|precio_ar }}</span>
+                    <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ v.cantidad }} cot</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #64748b; font-size: 13px;">Sin cotizaciones confirmadas</p>
+            {% endfor %}
+        </div>
+
+        <!-- Top implementos -->
+        <div class="card" style="padding: 20px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Top Implementos</h3>
+            {% for i in top_implementos %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+                <span style="color: #cbd5e1; font-size: 13px;">{{ i.implemento__nombre }}</span>
+                <div style="text-align: right;">
+                    <span style="color: #60a5fa; font-size: 13px; font-weight: 500;">{{ i.total|precio_ar }}</span>
+                    <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ i.cantidad }} cot</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #64748b; font-size: 13px;">Sin cotizaciones confirmadas</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

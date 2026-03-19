@@ -133,14 +133,8 @@
                         Historial
                     </a>
                     {% if user.rol == 'dueno' or user.rol == 'admin' or user.is_superuser %}
-                    <a href="{% url 'panel_listas' %}" style="padding: 8px 16px; background: transparent; color: #94a3b8; border: 1px solid transparent; border-radius: 8px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                        Precios
-                    </a>
-                    <a href="{% url 'configuracion_tenant' %}" style="padding: 8px 16px; background: transparent; color: #94a3b8; border: 1px solid transparent; border-radius: 8px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                        Config
-                    </a>
-                    <a href="{% url 'admin:index' %}" style="padding: 8px 16px; background: transparent; color: #94a3b8; border: 1px solid transparent; border-radius: 8px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                        Admin
+                    <a href="{% url 'dashboard' %}" style="padding: 8px 16px; background: transparent; color: #94a3b8; border: 1px solid transparent; border-radius: 8px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                        Gestion
                     </a>
                     {% endif %}
                 </div>

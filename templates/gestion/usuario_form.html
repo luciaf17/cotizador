@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'crear' %}Nuevo Usuario{% else %}Editar {{ usuario.nombre }}{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">
+        {% if modo == 'crear' %}Nuevo Usuario{% else %}Editar {{ usuario.nombre }}{% endif %}
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Email</label>
+                    <input type="email" name="email" value="{{ usuario.email|default:'' }}" class="input-dark" required
+                           {% if modo == 'editar' %}readonly style="opacity: 0.6; width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #f1f5f9; font-size: 14px;"{% endif %}>
+                </div>
+                <div>
+                    <label class="label-dark">Nombre</label>
+                    <input type="text" name="nombre" value="{{ usuario.nombre|default:'' }}" class="input-dark" required>
+                </div>
+                <div>
+                    <label class="label-dark">Contrasena{% if modo == 'editar' %} (dejar vacio para no cambiar){% endif %}</label>
+                    <input type="password" name="password" class="input-dark" {% if modo == 'crear' %}required{% endif %}>
+                </div>
+                <div>
+                    <label class="label-dark">Rol</label>
+                    <select name="rol" class="input-dark">
+                        <option value="vendedor" {% if usuario.rol == 'vendedor' %}selected{% endif %}>Vendedor</option>
+                        <option value="dueno" {% if usuario.rol == 'dueno' %}selected{% endif %}>Dueno</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="label-dark">Bonif max (%)</label>
+                        <input type="number" name="bonif_max_porcentaje" value="{{ usuario.bonif_max_porcentaje|default:'0' }}" class="input-dark" step="0.5" min="0">
+                    </div>
+                    <div>
+                        <label class="label-dark">Comision (%)</label>
+                        <input type="number" name="comision_porcentaje" value="{{ usuario.comision_porcentaje|default:'0' }}" class="input-dark" step="0.5" min="0">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <label style="color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="requiere_validacion" value="1"
+                               {% if usuario.requiere_validacion %}checked{% endif %} style="accent-color: #3b82f6;">
+                        Requiere validacion
+                    </label>
+                    {% if modo == 'editar' %}
+                    <label style="color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="activo" value="1"
+                               {% if usuario.activo %}checked{% endif %} style="accent-color: #22c55e;">
+                        Activo
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="{% url 'usuarios_lista' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">
+                {% if modo == 'crear' %}Crear Usuario{% else %}Guardar Cambios{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

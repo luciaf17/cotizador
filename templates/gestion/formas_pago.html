@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Formas de Pago{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Formas de Pago</h2>
+        <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+    </div>
+
+    {% for fp in formas %}
+    <form method="post" action="{% url 'forma_pago_guardar' %}" class="card" style="padding: 14px 20px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px;">
+        {% csrf_token %}
+        <input type="hidden" name="forma_id" value="{{ fp.id }}">
+        <input type="text" name="nombre" value="{{ fp.nombre }}" class="input-dark" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+        <input type="number" name="bonificacion_porcentaje" value="{{ fp.bonificacion_porcentaje|stringformat:'.1f' }}" step="0.5" min="0" class="input-dark" style="width: 80px; padding: 8px 12px; font-size: 13px; text-align: right;">
+        <span style="color: #64748b; font-size: 13px;">%</span>
+        <label style="color: #cbd5e1; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+            <input type="checkbox" name="activo" value="1" {% if fp.activo %}checked{% endif %} style="accent-color: #22c55e;">
+            Activo
+        </label>
+        <button type="submit" style="padding: 6px 12px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">OK</button>
+    </form>
+    {% endfor %}
+
+    <!-- Nueva -->
+    <form method="post" action="{% url 'forma_pago_guardar' %}" class="card" style="padding: 14px 20px; margin-top: 12px; display: flex; align-items: center; gap: 12px; border-color: rgba(59,130,246,0.2);">
+        {% csrf_token %}
+        <input type="text" name="nombre" placeholder="Nueva forma..." class="input-dark" style="flex: 1; padding: 8px 12px; font-size: 13px;" required>
+        <input type="number" name="bonificacion_porcentaje" value="0" step="0.5" min="0" class="input-dark" style="width: 80px; padding: 8px 12px; font-size: 13px; text-align: right;">
+        <span style="color: #64748b; font-size: 13px;">%</span>
+        <button type="submit" class="btn-primary" style="padding: 6px 16px; font-size: 12px;">Agregar</button>
+    </form>
+</div>
+{% endblock %}

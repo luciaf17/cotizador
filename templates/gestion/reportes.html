@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Reportes — Cotizaciones Confirmadas</h2>
+        <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+    </div>
+
+    <!-- Totales -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px;">
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #22c55e; font-size: 24px; font-weight: 700;">{{ total_monto|precio_ar }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Total vendido</div>
+        </div>
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #60a5fa; font-size: 24px; font-weight: 700;">{{ cant_confirmadas }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Cotizaciones</div>
+        </div>
+        <div class="card" style="padding: 20px; text-align: center;">
+            <div style="color: #a78bfa; font-size: 24px; font-weight: 700;">{{ total_comision|precio_ar }}</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Total comisiones</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <!-- Por vendedor -->
+        <div class="card" style="padding: 20px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Por Vendedor</h3>
+            {% for v in por_vendedor %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+                <span style="color: #cbd5e1; font-size: 13px;">{{ v.vendedor__nombre }}</span>
+                <div style="text-align: right;">
+                    <span style="color: #22c55e; font-size: 13px; font-weight: 500;">{{ v.monto|precio_ar }}</span>
+                    <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ v.cantidad }} cot</span>
+                    {% if v.comision %}
+                    <span style="color: #a78bfa; font-size: 11px; margin-left: 6px;">com: {{ v.comision|precio_ar }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #64748b; font-size: 13px;">Sin datos</p>
+            {% endfor %}
+        </div>
+
+        <!-- Por implemento -->
+        <div class="card" style="padding: 20px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Por Implemento</h3>
+            {% for i in por_implemento %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+                <span style="color: #cbd5e1; font-size: 13px;">{{ i.implemento__nombre }}</span>
+                <div>
+                    <span style="color: #60a5fa; font-size: 13px; font-weight: 500;">{{ i.monto|precio_ar }}</span>
+                    <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ i.cantidad }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #64748b; font-size: 13px;">Sin datos</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Por cliente -->
+    <div class="card" style="padding: 20px;">
+        <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Top Clientes</h3>
+        {% for c in por_cliente %}
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+            <div>
+                <span style="color: #cbd5e1; font-size: 13px;">{{ c.cliente__nombre }}</span>
+                <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ c.cliente__tipo_cliente__nombre }}</span>
+            </div>
+            <div>
+                <span style="color: #22c55e; font-size: 13px; font-weight: 500;">{{ c.monto|precio_ar }}</span>
+                <span style="color: #64748b; font-size: 11px; margin-left: 6px;">{{ c.cantidad }} cot</span>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: #64748b; font-size: 13px;">Sin datos</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Gestion de Usuarios{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Usuarios</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'usuario_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nuevo Usuario</a>
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+        {% for u in usuarios %}
+        <div class="card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div>
+                    <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ u.nombre }}</span>
+                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">{{ u.email }}</div>
+                </div>
+                <span class="badge-status badge-{% if u.rol == 'dueno' %}vigente{% elif u.rol == 'admin' %}confirmada{% else %}aprobada{% endif %}">{{ u.get_rol_display }}</span>
+                {% if u.requiere_validacion %}
+                <span style="color: #facc15; font-size: 11px; background: rgba(234,179,8,0.1); padding: 2px 8px; border-radius: 4px;">Req. validacion</span>
+                {% endif %}
+                {% if not u.activo %}
+                <span style="color: #f87171; font-size: 11px; background: rgba(239,68,68,0.1); padding: 2px 8px; border-radius: 4px;">Inactivo</span>
+                {% endif %}
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="color: #64748b; font-size: 11px;">Bonif: {{ u.bonif_max_porcentaje }}% &middot; Com: {{ u.comision_porcentaje }}%</span>
+                <a href="{% url 'usuario_editar' user_id=u.id %}"
+                   style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
