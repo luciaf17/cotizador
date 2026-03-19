@@ -31,7 +31,7 @@
                         <option value="dueno" {% if usuario.rol == 'dueno' %}selected{% endif %}>Dueno</option>
                     </select>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
                     <div>
                         <label class="label-dark">Bonif max (%)</label>
                         <input type="number" name="bonif_max_porcentaje" value="{{ usuario.bonif_max_porcentaje|default:'0' }}" class="input-dark" step="0.5" min="0">

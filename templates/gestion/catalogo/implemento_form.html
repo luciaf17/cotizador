@@ -11,7 +11,7 @@
                     <label class="label-dark">Nombre</label>
                     <input type="text" name="nombre" value="{{ implemento.nombre|default:'' }}" class="input-dark" required>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
                     <div>
                         <label class="label-dark">Accesorios tipo</label>
                         <select name="accesorios_tipo" class="input-dark">

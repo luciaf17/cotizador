@@ -31,7 +31,8 @@
                class="input-dark" style="max-width: 400px;">
     </form>
 
-    <!-- Header tabla -->
+    <!-- Tabla con scroll horizontal en mobile -->
+    <div style="overflow-x: auto;">
     <div style="display: grid; grid-template-columns: 1fr 110px 110px 130px 110px {% if lista.estado == 'borrador' %}140px{% endif %}; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px;">
         <span class="label-dark" style="margin: 0;">Producto</span>
         <span class="label-dark" style="margin: 0; text-align: right;">Vigente</span>
@@ -84,6 +85,7 @@
         </div>
         {% endfor %}
     </div>
+    </div><!-- cierre overflow-x -->
 
     {% if not precios_data %}
     <div class="card" style="padding: 40px; text-align: center;">

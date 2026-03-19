@@ -17,7 +17,7 @@
                     <label class="label-dark">Nombre</label>
                     <input type="text" name="nombre" value="{{ prearmado.nombre|default:'' }}" class="input-dark" required>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                     <div>
                         <label class="label-dark">Implemento</label>
                         <select name="implemento" class="input-dark" required>

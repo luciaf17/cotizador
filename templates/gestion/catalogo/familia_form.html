@@ -20,7 +20,7 @@
                         <label class="label-dark">Nombre</label>
                         <input type="text" name="nombre" value="{{ familia.nombre|default:'' }}" class="input-dark" required>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
                         <div>
                             <label class="label-dark">Orden</label>
                             <input type="number" name="orden" value="{{ familia.orden|default:1 }}" class="input-dark" min="1" required>
