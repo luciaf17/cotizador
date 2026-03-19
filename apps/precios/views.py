@@ -87,14 +87,51 @@ def crear_lista(request):
 def editar_lista(request, lista_id):
     tenant = _get_tenant()
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)
-    precios = PrecioProducto.objects.filter(lista=lista).select_related('producto').order_by('producto__nombre')
+    precios_qs = PrecioProducto.objects.filter(lista=lista).select_related('producto').order_by('producto__nombre')
     q = request.GET.get('q', '').strip()
     if q:
-        precios = precios.filter(producto__nombre__icontains=q)
+        precios_qs = precios_qs.filter(producto__nombre__icontains=q)
+
+    # Precios vigentes para comparar
+    vigente = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
+    precios_vigentes = {}
+    if vigente and vigente.id != lista.id:
+        precios_vigentes = dict(
+            PrecioProducto.objects.filter(lista=vigente).values_list('producto_id', 'precio')
+        )
+
+    # Precios ajustados originales (recalcular desde base si existe)
+    import math
+    precios_ajustados = {}
+    if lista.lista_base and lista.ajuste_pct is not None:
+        factor = 1 + float(lista.ajuste_pct) / 100
+        for pp_base in PrecioProducto.objects.filter(lista=lista.lista_base):
+            precios_ajustados[pp_base.producto_id] = Decimal(str(math.ceil(float(pp_base.precio * Decimal(str(factor))))))
+
+    # Armar datos para el template
+    precios_data = []
+    for pp in precios_qs:
+        precio_vigente = precios_vigentes.get(pp.producto_id, Decimal('0'))
+        precio_ajustado = precios_ajustados.get(pp.producto_id, pp.precio)
+        fue_editado = pp.precio != precio_ajustado and pp.editado_por is not None
+        if precio_vigente > 0:
+            dif_monto = pp.precio - precio_vigente
+            dif_pct = ((pp.precio - precio_vigente) / precio_vigente * 100).quantize(Decimal('0.1'))
+        else:
+            dif_monto = Decimal('0')
+            dif_pct = Decimal('0')
+        precios_data.append({
+            'pp': pp,
+            'precio_vigente': precio_vigente,
+            'precio_ajustado': precio_ajustado,
+            'fue_editado': fue_editado,
+            'dif_monto': dif_monto,
+            'dif_pct': dif_pct,
+        })
 
     return render(request, 'precios/editar_lista.html', {
         'lista': lista,
-        'precios': precios,
+        'precios_data': precios_data,
         'q': q,
     })
 
