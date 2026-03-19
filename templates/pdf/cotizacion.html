@@ -50,7 +50,13 @@
     {% endif %}
     <h1>{{ tenant.nombre }}</h1>
     <div class="subtitle">COTIZACION</div>
-    <div class="cotnum">{{ cotizacion.numero }}</div>
+    <div class="cotnum">{{ cotizacion.numero }}
+        {% if cotizacion.estado == 'aprobada' and not cotizacion.aprobada_por %}
+        <span style="color: #facc15; font-size: 9pt; margin-left: 8px;">PENDIENTE DE APROBACION</span>
+        {% elif cotizacion.aprobada_por %}
+        <span style="color: #94a3b8; font-size: 9pt; margin-left: 8px;">Aprobada por: {{ cotizacion.aprobada_por.nombre }}</span>
+        {% endif %}
+    </div>
 </div>
 <div class="accent-bar"></div>
 

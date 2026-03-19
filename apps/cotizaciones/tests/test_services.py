@@ -562,11 +562,10 @@ class TestDimensionesMultiplesProductos:
 
 
 @pytest.mark.django_db
-class TestRodadosConNivelMultiple:
-    """Bug 3: rodados con nivel > 1 multiplican cantidades."""
+class TestRodadosPorAcumulado:
+    """Rodados se determinan por dimensiones acumuladas, no por campo fijo."""
 
-    def test_cantidad_rodados_viene_del_chasis(self):
-        """La cantidad de rodados es el valor de la propiedad del chasis (no * nivel)."""
+    def test_cantidad_rodados_viene_del_acumulado(self):
         tenant = TenantFactory()
         imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=3)
         imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
@@ -581,5 +580,40 @@ class TestRodadosConNivelMultiple:
         acumulado = calcular_dimensiones([chasis.id])
         rodados = get_rodados_para_implemento(imp, [chasis.id], acumulado)
 
-        # Cantidad = valor propiedad Llantas del chasis (4), no multiplicado por nivel
         assert rodados[0]['cantidad'] == 4
+
+    def test_saltea_rodado_con_cantidad_cero(self):
+        """Si Llantas=0 en acumulado, no muestra paso de llantas."""
+        tenant = TenantFactory()
+        imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=1)
+        imp_rodados = ImplementoFactory(tenant=tenant, nombre='Rodados')
+
+        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas', agregacion='MAX')
+        prop_ejes = PropiedadFactory(tenant=tenant, nombre='Ejes', agregacion='MAX')
+        FamiliaFactory(tenant=tenant, implemento=imp_rodados, nombre='Llantas', orden=1)
+        fam_ejes = FamiliaFactory(tenant=tenant, implemento=imp_rodados, nombre='Ejes', orden=2)
+        ProductoFactory(tenant=tenant, implemento=imp_rodados, familia=fam_ejes)
+
+        # Producto con Ejes=1 pero sin Llantas
+        prod = ProductoFactory(tenant=tenant, implemento=imp)
+        ProductoPropiedadFactory(producto=prod, propiedad=prop_ejes, tipo='Exacto', valor=Decimal('1'))
+
+        acumulado = calcular_dimensiones([prod.id])
+        rodados = get_rodados_para_implemento(imp, [prod.id], acumulado)
+
+        # Solo Ejes, no Llantas (Llantas=0 en acumulado)
+        assert len(rodados) == 1
+        assert 'eje' in rodados[0]['familia'].nombre.lower()
+
+    def test_sin_ninguna_propiedad_rodados_retorna_vacio(self):
+        """Si no hay Llantas/Ejes/Elásticos en acumulado, no muestra rodados."""
+        tenant = TenantFactory()
+        imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=1)
+        ImplementoFactory(tenant=tenant, nombre='Rodados')
+
+        prod = ProductoFactory(tenant=tenant, implemento=imp)
+
+        acumulado = calcular_dimensiones([prod.id])
+        rodados = get_rodados_para_implemento(imp, [prod.id], acumulado)
+
+        assert len(rodados) == 0

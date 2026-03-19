@@ -178,9 +178,9 @@ def get_productos_disponibles(implemento_id, orden_actual, seleccionados_ids,
 
 def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
     """
-    Si el implemento tiene accesorios_tipo='Rodados', retorna las familias
-    de rodados (Llantas → Ejes → Elásticos) con las cantidades determinadas
-    por las propiedades del chasis seleccionado.
+    Determina qué pasos de rodados mostrar basándose en las dimensiones
+    acumuladas. Si Llantas > 0, muestra Llantas. Si Ejes > 0, muestra Ejes.
+    Si Elásticos > 0, muestra Elásticos. Si alguno es 0, lo saltea.
 
     Args:
         implemento: instancia de Implemento
@@ -197,8 +197,6 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
     if acumulado is None:
         acumulado = calcular_dimensiones(seleccionados_ids)
 
-    nivel = implemento.nivel_rodado or 1
-
     # Buscar implemento "Rodados"
     try:
         imp_rodados = Implemento.objects.get(
@@ -208,21 +206,18 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
     except Implemento.DoesNotExist:
         return []
 
-    # Obtener propiedades de rodados del acumulado
+    # Obtener cantidades del acumulado
     propiedades = {p.nombre: p for p in Propiedad.objects.filter(tenant=implemento.tenant)}
     props = {
         nombre: acumulado.get(p.id, Decimal('0'))
         for nombre, p in propiedades.items()
     }
 
-    # Cantidades de rodados desde propiedades del chasis (ya son totales)
     cant_llantas = int(props.get('Llantas', 0))
     cant_ejes = int(props.get('Ejes', 0))
     cant_elasticos = int(props.get('Elásticos', 0))
 
-    # SPEC 3.5: "El peso que soportan las llantas es por unidad de llantas"
-    # Para verificar propiedades de rodados, el peso debe dividirse
-    # por la cantidad de llantas.
+    # Peso por llanta para filtrar propiedades de rodados
     acumulado_rodados = dict(acumulado)
     if cant_llantas > 0 and 'Peso' in propiedades:
         peso_id = propiedades['Peso'].id
@@ -243,7 +238,11 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
         elif 'elástico' in nombre_lower or 'elastico' in nombre_lower:
             cantidad = cant_elasticos
         else:
-            cantidad = nivel
+            cantidad = 0
+
+        # Saltear si la cantidad acumulada es 0
+        if cantidad <= 0:
+            continue
 
         productos = []
         for prod in Producto.objects.filter(familia=familia):

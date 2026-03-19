@@ -424,7 +424,7 @@ class TestAutoAvanceARodados:
         imp = ImplementoFactory(tenant=tenant, accesorios_tipo='Rodados', nivel_rodado=1)
         fam = FamiliaFactory(tenant=tenant, implemento=imp, orden=1, tipo_seleccion='O', obligatoria='SI')
         prod = ProductoFactory(tenant=tenant, implemento=imp, familia=fam)
-        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas2', agregacion='MAX')
+        prop_llantas = PropiedadFactory(tenant=tenant, nombre='Llantas', agregacion='MAX')
         ProductoPropiedadFactory(producto=prod, propiedad=prop_llantas, tipo='Exacto', valor=Decimal('4'))
         PrecioProductoFactory(lista=s['lista'], producto=prod, precio=Decimal('10000'))
 
