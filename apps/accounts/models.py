@@ -43,6 +43,14 @@ class User(AbstractUser):
         default=False,
         verbose_name='Requiere validación',
     )
+    bonif_max_porcentaje = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        verbose_name='Bonificación extra máxima (%)',
+    )
+    comision_porcentaje = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        verbose_name='Comisión (%)',
+    )
     activo = models.BooleanField(default=True)
 
     objects = UserManager()

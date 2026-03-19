@@ -87,6 +87,13 @@
                 <span style="color: #f1f5f9; font-size: 20px; font-weight: 700;">TOTAL</span>
                 <span style="color: #60a5fa; font-size: 22px; font-weight: 700;">{{ cotizacion.precio_total|precio_ar }}</span>
             </div>
+            {% if puede_ver_comision and cotizacion.comision_monto %}
+            <div class="divider"></div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #a78bfa; font-size: 13px;">Comision ({{ cotizacion.comision_porcentaje_efectivo }}%)</span>
+                <span style="color: #a78bfa; font-size: 13px; font-weight: 500;">{{ cotizacion.comision_monto|precio_ar }}</span>
+            </div>
+            {% endif %}
         </div>
     </div>
 

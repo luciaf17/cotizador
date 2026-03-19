@@ -310,17 +310,6 @@ class TestCalcularBonificaciones:
         assert resultado['bonif_cliente_monto'] == Decimal('1000.00')
         assert resultado['bonif_pago_monto'] == Decimal('450.00')
 
-    def test_bonificacion_no_excede_bonif_max(self):
-        resultado = calcular_bonificaciones(
-            subtotal_bruto=Decimal('10000'),
-            bonif_cliente_pct=Decimal('15'),
-            bonif_pago_pct=Decimal('15'),
-            bonif_max_pct=Decimal('20'),
-        )
-        # 15+15=30 > 20 → se reduce proporcionalmente: 10+10=20
-        assert resultado['bonif_cliente_pct'] == Decimal('10.00')
-        assert resultado['bonif_pago_pct'] == Decimal('10.00')
-
     def test_sin_bonificaciones(self):
         resultado = calcular_bonificaciones(
             subtotal_bruto=Decimal('5000'),
@@ -339,16 +328,15 @@ class TestCalcularBonificaciones:
         )
         assert resultado['subtotal_neto'] == Decimal('8000.00')
 
-    def test_bonif_max_no_afecta_si_no_excede(self):
+    def test_bonificaciones_sin_tope(self):
         resultado = calcular_bonificaciones(
             subtotal_bruto=Decimal('10000'),
-            bonif_cliente_pct=Decimal('5'),
-            bonif_pago_pct=Decimal('5'),
-            bonif_max_pct=Decimal('30'),
+            bonif_cliente_pct=Decimal('20'),
+            bonif_pago_pct=Decimal('15'),
         )
-        # 5+5=10 < 30, no se modifica
-        assert resultado['bonif_cliente_pct'] == Decimal('5')
-        assert resultado['bonif_pago_pct'] == Decimal('5')
+        # Sin tope, se aplican tal cual en cascada
+        assert resultado['bonif_cliente_pct'] == Decimal('20')
+        assert resultado['bonif_pago_pct'] == Decimal('15')
 
 
 # ── IVA por alícuota ─────────────────────────────────────────────────
@@ -432,14 +420,22 @@ class TestCalcularTotales:
         assert resultado['iva_total'] == Decimal('1680.00')
         assert resultado['precio_total'] == Decimal('11680.00')
 
-    def test_total_con_bonif_max(self):
+    def test_total_con_comision(self):
         items = [
             {'precio_linea': Decimal('10000'), 'iva_porcentaje': Decimal('21.00')},
         ]
-        resultado = calcular_totales(items, Decimal('20'), Decimal('20'), bonif_max_pct=Decimal('20'))
-        # 20+20=40 > 20 → reduce a 10+10
-        assert resultado['bonif_cliente_pct'] == Decimal('10.00')
-        assert resultado['bonif_pago_pct'] == Decimal('10.00')
+        resultado = calcular_totales(
+            items, Decimal('10'), Decimal('5'),
+            bonif_cliente_default=Decimal('10'),
+            bonif_pago_default=Decimal('5'),
+            usuario_bonif_max=Decimal('15'),
+            usuario_comision_pct=Decimal('5'),
+            comision_impacto_bonif=Decimal('0.60'),
+        )
+        # Sin bonif extra (real == default), comision = 5% full
+        assert resultado['comision_porcentaje_efectivo'] == Decimal('5.00')
+        # subtotal_neto = 8550, comision = 8550 * 5% = 427.50
+        assert resultado['comision_monto'] == Decimal('427.50')
 
     def test_total_sin_items(self):
         resultado = calcular_totales([], Decimal('0'), Decimal('0'))
@@ -453,6 +449,63 @@ class TestCalcularTotales:
         resultado = calcular_totales(items, Decimal('0'), Decimal('0'))
         assert resultado['iva_105_base'] == Decimal('0')
         assert resultado['iva_105_monto'] == Decimal('0')
+
+
+# ── Comisiones ───────────────────────────────────────────────────────
+
+
+class TestCalcularComision:
+    def test_comision_sin_bonif_extra(self):
+        from apps.cotizaciones.services import calcular_comision
+        result = calcular_comision(
+            subtotal_neto=Decimal('10000'),
+            bonif_cliente_real=Decimal('15'), bonif_pago_real=Decimal('10'),
+            bonif_cliente_default=Decimal('15'), bonif_pago_default=Decimal('10'),
+            usuario_bonif_max=Decimal('15'), usuario_comision_pct=Decimal('5'),
+            comision_impacto_bonif=Decimal('0.60'),
+        )
+        # No usó extra → comision full 5%
+        assert result['comision_porcentaje_efectivo'] == Decimal('5.00')
+        assert result['comision_monto'] == Decimal('500.00')
+
+    def test_comision_con_bonif_extra_total(self):
+        from apps.cotizaciones.services import calcular_comision
+        result = calcular_comision(
+            subtotal_neto=Decimal('10000'),
+            bonif_cliente_real=Decimal('22.5'), bonif_pago_real=Decimal('17.5'),
+            bonif_cliente_default=Decimal('15'), bonif_pago_default=Decimal('10'),
+            usuario_bonif_max=Decimal('15'), usuario_comision_pct=Decimal('5'),
+            comision_impacto_bonif=Decimal('0.60'),
+        )
+        # Usó 7.5 + 7.5 = 15 de 15 max → 100% uso → reduccion = 0.60
+        # comision = 5 * (1 - 0.60) = 2.00
+        assert result['comision_porcentaje_efectivo'] == Decimal('2.00')
+        assert result['comision_monto'] == Decimal('200.00')
+
+    def test_comision_con_bonif_extra_parcial(self):
+        from apps.cotizaciones.services import calcular_comision
+        result = calcular_comision(
+            subtotal_neto=Decimal('10000'),
+            bonif_cliente_real=Decimal('18.75'), bonif_pago_real=Decimal('10'),
+            bonif_cliente_default=Decimal('15'), bonif_pago_default=Decimal('10'),
+            usuario_bonif_max=Decimal('15'), usuario_comision_pct=Decimal('5'),
+            comision_impacto_bonif=Decimal('0.60'),
+        )
+        # Extra usada = 3.75 de 15 → 25% uso → reduccion = 0.25 * 0.60 = 0.15
+        # comision = 5 * (1 - 0.15) = 4.25
+        assert result['comision_porcentaje_efectivo'] == Decimal('4.25')
+
+    def test_comision_cero_si_usuario_sin_comision(self):
+        from apps.cotizaciones.services import calcular_comision
+        result = calcular_comision(
+            subtotal_neto=Decimal('10000'),
+            bonif_cliente_real=Decimal('15'), bonif_pago_real=Decimal('10'),
+            bonif_cliente_default=Decimal('15'), bonif_pago_default=Decimal('10'),
+            usuario_bonif_max=Decimal('0'), usuario_comision_pct=Decimal('0'),
+            comision_impacto_bonif=Decimal('0.60'),
+        )
+        assert result['comision_porcentaje_efectivo'] == Decimal('0.00')
+        assert result['comision_monto'] == Decimal('0.00')
 
 
 # ── Tests de bugs corregidos ─────────────────────────────────────────

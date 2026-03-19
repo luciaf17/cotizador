@@ -7,6 +7,7 @@ class TenantFactory(factory.django.DjangoModelFactory):
 
     nombre = factory.Faker('company')
     slug = factory.Sequence(lambda n: f'tenant-{n}')
-    bonif_max_porcentaje = 30
     moneda = 'ARS'
+    comision_impacto_bonif = '0.60'
+    mostrar_comisiones = True
     activo = True

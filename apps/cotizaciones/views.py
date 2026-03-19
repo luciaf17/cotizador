@@ -544,9 +544,19 @@ def seleccionar_rodado(request, cotizacion_id):
 def bonificaciones(request, cotizacion_id):
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+    user = request.user
 
     formas_pago = FormaPago.objects.filter(tenant=tenant, activo=True)
-    bonif_max = float(tenant.bonif_max_porcentaje) if tenant else 30
+    extra_por_barra = float(user.bonif_max_porcentaje) / 2
+
+    # Defaults de bonificación
+    cliente_default = float(cotizacion.cliente.bonificacion_porcentaje)
+    forma_pago_actual = cotizacion.forma_pago
+    pago_default = float(forma_pago_actual.bonificacion_porcentaje) if forma_pago_actual else 0
+
+    # Max de cada barra = default + extra
+    cliente_max = cliente_default + extra_por_barra
+    pago_max = pago_default + extra_por_barra
 
     if request.method == 'POST':
         bonif_cliente_pct = Decimal(request.POST.get('bonif_cliente_pct', '0'))
@@ -557,11 +567,19 @@ def bonificaciones(request, cotizacion_id):
 
         if forma_pago_id:
             cotizacion.forma_pago_id = forma_pago_id
+            # Recalcular pago_default con la forma de pago elegida
+            fp = FormaPago.objects.filter(id=forma_pago_id).first()
+            if fp:
+                pago_default = float(fp.bonificacion_porcentaje)
 
         items_data = _get_items_data(cotizacion)
         totales = calcular_totales(
             items_data, bonif_cliente_pct, bonif_pago_pct,
-            Decimal(str(bonif_max)),
+            bonif_cliente_default=Decimal(str(cliente_default)),
+            bonif_pago_default=Decimal(str(pago_default)),
+            usuario_bonif_max=user.bonif_max_porcentaje,
+            usuario_comision_pct=user.comision_porcentaje,
+            comision_impacto_bonif=tenant.comision_impacto_bonif,
         )
 
         cotizacion.subtotal_bruto = totales['subtotal_bruto']
@@ -576,6 +594,8 @@ def bonificaciones(request, cotizacion_id):
         cotizacion.iva_21_monto = totales['iva_21_monto']
         cotizacion.iva_total = totales['iva_total']
         cotizacion.precio_total = totales['precio_total']
+        cotizacion.comision_porcentaje_efectivo = totales['comision_porcentaje_efectivo']
+        cotizacion.comision_monto = totales['comision_monto']
         cotizacion.notas = notas
 
         if fecha_entrega:
@@ -587,25 +607,26 @@ def bonificaciones(request, cotizacion_id):
     items_data = _get_items_data(cotizacion)
     subtotal_bruto = sum(Decimal(str(i['precio_linea'])) for i in items_data)
 
-    cliente_max = float(cotizacion.cliente.bonificacion_porcentaje)
-    forma_pago_actual = cotizacion.forma_pago
-    pago_max = float(forma_pago_actual.bonificacion_porcentaje) if forma_pago_actual else 0
-
-    # Iniciar al 50% de cada rango, redondeado a 0.5
-    cliente_init = round(cliente_max / 2 * 2) / 2
-    pago_init = round(pago_max / 2 * 2) / 2
+    # Puede ver comisión?
+    puede_ver_comision = (
+        tenant.mostrar_comisiones
+        or user.rol in ('admin', 'dueno')
+        or user.is_superuser
+    )
 
     return render(request, 'cotizaciones/bonificaciones.html', {
         'cotizacion': cotizacion,
         'formas_pago': formas_pago,
-        'bonif_max': str(tenant.bonif_max_porcentaje) if tenant else '30',
         'bonif_cliente_max': str(cliente_max),
         'bonif_pago_max': str(pago_max),
-        'bonif_cliente_init': str(cliente_init),
-        'bonif_pago_init': str(pago_init),
+        'bonif_cliente_init': str(cliente_default),
+        'bonif_pago_init': str(pago_default),
+        'extra_por_barra': str(extra_por_barra),
         'subtotal_bruto': subtotal_bruto,
         'forma_pago_nombre': forma_pago_actual.nombre if forma_pago_actual else '',
         'fecha_min': date.today().isoformat(),
+        'puede_ver_comision': puede_ver_comision,
+        'usuario_comision_pct': str(user.comision_porcentaje),
     })
 
 
@@ -614,26 +635,43 @@ def calcular_preview(request, cotizacion_id):
     """HTMX endpoint para preview de totales en vivo."""
     tenant = _get_tenant()
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+    user = request.user
 
     bonif_cliente_pct = Decimal(request.GET.get('bonif_cliente_pct', '0'))
     bonif_pago_pct = Decimal(request.GET.get('bonif_pago_pct', '0'))
     forma_pago_id = request.GET.get('forma_pago_id', '')
-    bonif_max = tenant.bonif_max_porcentaje if tenant else Decimal('30')
 
-    items_data = _get_items_data(cotizacion)
-    totales = calcular_totales(items_data, bonif_cliente_pct, bonif_pago_pct, bonif_max)
-
-    # Usar la forma de pago seleccionada en el dropdown, no la guardada
+    cliente_default = cotizacion.cliente.bonificacion_porcentaje
+    pago_default = cotizacion.forma_pago.bonificacion_porcentaje
     forma_pago_nombre = cotizacion.forma_pago.nombre
+
     if forma_pago_id:
         fp = FormaPago.objects.filter(id=forma_pago_id, tenant=tenant).first()
         if fp:
             forma_pago_nombre = fp.nombre
+            pago_default = fp.bonificacion_porcentaje
+
+    items_data = _get_items_data(cotizacion)
+    totales = calcular_totales(
+        items_data, bonif_cliente_pct, bonif_pago_pct,
+        bonif_cliente_default=cliente_default,
+        bonif_pago_default=pago_default,
+        usuario_bonif_max=user.bonif_max_porcentaje,
+        usuario_comision_pct=user.comision_porcentaje,
+        comision_impacto_bonif=tenant.comision_impacto_bonif,
+    )
+
+    puede_ver_comision = (
+        tenant.mostrar_comisiones
+        or user.rol in ('admin', 'dueno')
+        or user.is_superuser
+    )
 
     return render(request, 'cotizaciones/partials/totales_preview.html', {
         'totales': totales,
         'cotizacion': cotizacion,
         'forma_pago_nombre': forma_pago_nombre,
+        'puede_ver_comision': puede_ver_comision,
     })
 
 
@@ -677,9 +715,16 @@ def resumen(request, cotizacion_id):
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     items = cotizacion.items.select_related('producto', 'familia').all()
 
+    puede_ver_comision = (
+        tenant.mostrar_comisiones
+        or request.user.rol in ('admin', 'dueno')
+        or request.user.is_superuser
+    )
+
     return render(request, 'cotizaciones/resumen.html', {
         'cotizacion': cotizacion,
         'items': items,
+        'puede_ver_comision': puede_ver_comision,
     })
 
 

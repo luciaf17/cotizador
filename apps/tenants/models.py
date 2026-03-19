@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.db import models
 
@@ -25,11 +26,15 @@ class Tenant(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre = models.CharField(max_length=200)
     slug = models.SlugField(max_length=100, unique=True)
-    bonif_max_porcentaje = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0,
-        verbose_name='Bonificación máxima (%)',
-    )
     moneda = models.CharField(max_length=3, default='ARS')
+    comision_impacto_bonif = models.DecimalField(
+        max_digits=3, decimal_places=2, default=Decimal('0.60'),
+        verbose_name='Factor impacto bonificación sobre comisión',
+    )
+    mostrar_comisiones = models.BooleanField(
+        default=False,
+        verbose_name='Vendedor ve su comisión',
+    )
     logo = models.ImageField(
         upload_to='tenants/logos/',
         null=True, blank=True,

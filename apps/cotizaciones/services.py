@@ -262,35 +262,14 @@ def get_rodados_para_implemento(implemento, seleccionados_ids, acumulado=None):
     return resultado
 
 
-def calcular_bonificaciones(subtotal_bruto, bonif_cliente_pct, bonif_pago_pct,
-                             bonif_max_pct=None):
+def calcular_bonificaciones(subtotal_bruto, bonif_cliente_pct, bonif_pago_pct):
     """
     Calcula bonificaciones en cascada: primero tipo cliente sobre el bruto,
     luego forma de pago sobre el resultado.
-
-    Args:
-        subtotal_bruto: Decimal
-        bonif_cliente_pct: Decimal (porcentaje, ej: 10 para 10%)
-        bonif_pago_pct: Decimal (porcentaje)
-        bonif_max_pct: Decimal opcional, techo combinado
-
-    Returns:
-        dict con bonif_cliente_monto, bonif_pago_monto, subtotal_neto
     """
     subtotal_bruto = Decimal(str(subtotal_bruto))
     bonif_cliente_pct = Decimal(str(bonif_cliente_pct))
     bonif_pago_pct = Decimal(str(bonif_pago_pct))
-
-    # Aplicar techo si existe
-    if bonif_max_pct is not None:
-        bonif_max_pct = Decimal(str(bonif_max_pct))
-        total_pct = bonif_cliente_pct + bonif_pago_pct
-        if total_pct > bonif_max_pct:
-            # Reducir proporcionalmente
-            if total_pct > 0:
-                factor = bonif_max_pct / total_pct
-                bonif_cliente_pct = (bonif_cliente_pct * factor).quantize(Decimal('0.01'))
-                bonif_pago_pct = (bonif_pago_pct * factor).quantize(Decimal('0.01'))
 
     # Cascada: cliente primero
     bonif_cliente_monto = (subtotal_bruto * bonif_cliente_pct / 100).quantize(Decimal('0.01'))
@@ -359,39 +338,77 @@ def calcular_iva(items, subtotal_bruto, subtotal_neto):
     }
 
 
+def calcular_comision(subtotal_neto, bonif_cliente_real, bonif_pago_real,
+                       bonif_cliente_default, bonif_pago_default,
+                       usuario_bonif_max, usuario_comision_pct,
+                       comision_impacto_bonif):
+    """
+    Calcula la comisión del vendedor ajustada por bonificación extra.
+
+    bonif_extra_usada = (real - default) para cada barra
+    porcentaje_uso = extra_usada / usuario_bonif_max
+    reduccion = porcentaje_uso × comision_impacto_bonif
+    comision_efectiva = usuario_comision_pct × (1 - reduccion)
+    """
+    usuario_bonif_max = Decimal(str(usuario_bonif_max))
+    usuario_comision_pct = Decimal(str(usuario_comision_pct))
+    comision_impacto_bonif = Decimal(str(comision_impacto_bonif))
+
+    bonif_extra_cliente = max(Decimal('0'), Decimal(str(bonif_cliente_real)) - Decimal(str(bonif_cliente_default)))
+    bonif_extra_pago = max(Decimal('0'), Decimal(str(bonif_pago_real)) - Decimal(str(bonif_pago_default)))
+    bonif_extra_usada = bonif_extra_cliente + bonif_extra_pago
+
+    if usuario_bonif_max > 0:
+        porcentaje_uso = min(bonif_extra_usada / usuario_bonif_max, Decimal('1'))
+    else:
+        porcentaje_uso = Decimal('0')
+
+    reduccion = porcentaje_uso * comision_impacto_bonif
+    comision_efectiva = (usuario_comision_pct * (1 - reduccion)).quantize(Decimal('0.01'))
+    comision_monto = (Decimal(str(subtotal_neto)) * comision_efectiva / 100).quantize(Decimal('0.01'))
+
+    return {
+        'comision_porcentaje_efectivo': comision_efectiva,
+        'comision_monto': comision_monto,
+        'bonif_extra_usada': bonif_extra_usada,
+    }
+
+
 def calcular_totales(items, bonif_cliente_pct, bonif_pago_pct,
-                      bonif_max_pct=None):
+                      bonif_cliente_default=None, bonif_pago_default=None,
+                      usuario_bonif_max=None, usuario_comision_pct=None,
+                      comision_impacto_bonif=None):
     """
     Orquesta el cálculo completo: subtotal bruto, bonificaciones en cascada,
-    IVA desglosado por alícuota, y precio total.
-
-    Args:
-        items: lista de dicts con 'precio_linea' y 'iva_porcentaje'
-        bonif_cliente_pct: Decimal
-        bonif_pago_pct: Decimal
-        bonif_max_pct: Decimal opcional
-
-    Returns:
-        dict completo con todos los totales
+    IVA desglosado por alícuota, precio total, y comisión.
     """
-    # Subtotal bruto
     subtotal_bruto = sum(
         Decimal(str(item['precio_linea'])) for item in items
     )
 
-    # Bonificaciones
     bonif = calcular_bonificaciones(
-        subtotal_bruto, bonif_cliente_pct, bonif_pago_pct, bonif_max_pct,
+        subtotal_bruto, bonif_cliente_pct, bonif_pago_pct,
     )
 
-    # IVA
     iva = calcular_iva(items, subtotal_bruto, bonif['subtotal_neto'])
 
-    # Totales IVA por alícuota conocida
     iva_105 = iva['desglose'].get(Decimal('10.50'), {'base': Decimal('0'), 'monto': Decimal('0')})
     iva_21 = iva['desglose'].get(Decimal('21.00'), {'base': Decimal('0'), 'monto': Decimal('0')})
 
     precio_total = bonif['subtotal_neto'] + iva['iva_total']
+
+    # Comisión
+    comision = {'comision_porcentaje_efectivo': Decimal('0'), 'comision_monto': Decimal('0')}
+    if usuario_comision_pct and usuario_comision_pct > 0:
+        comision = calcular_comision(
+            bonif['subtotal_neto'],
+            bonif['bonif_cliente_pct'], bonif['bonif_pago_pct'],
+            bonif_cliente_default or Decimal('0'),
+            bonif_pago_default or Decimal('0'),
+            usuario_bonif_max or Decimal('0'),
+            usuario_comision_pct,
+            comision_impacto_bonif or Decimal('0.60'),
+        )
 
     return {
         'subtotal_bruto': subtotal_bruto,
@@ -406,4 +423,6 @@ def calcular_totales(items, bonif_cliente_pct, bonif_pago_pct,
         'iva_21_monto': iva_21['monto'],
         'iva_total': iva['iva_total'],
         'precio_total': precio_total,
+        'comision_porcentaje_efectivo': comision['comision_porcentaje_efectivo'],
+        'comision_monto': comision['comision_monto'],
     }

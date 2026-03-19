@@ -79,7 +79,9 @@
                     <span style="color: #94a3b8; font-size: 12px;">Bonificacion combinada</span>
                     <span id="bonif_total_val" style="color: #60a5fa; font-size: 14px; font-weight: 600;">—</span>
                 </div>
-                <div style="color: #475569; font-size: 11px; margin-top: 4px;">Tope maximo: {{ bonif_max }}%</div>
+                {% if extra_por_barra != '0.0' %}
+                <div style="color: #475569; font-size: 11px; margin-top: 4px;">Extra disponible por barra: {{ extra_por_barra }}%</div>
+                {% endif %}
             </div>
         </div>
 
@@ -113,31 +115,17 @@
 </div>
 
 <script>
-var BONIF_MAX = parseFloat('{{ bonif_max }}');
+var EXTRA = parseFloat('{{ extra_por_barra }}');
 var calcUrl = '{% url "cotizacion_calcular" cotizacion_id=cotizacion.id %}';
 
 function onSlider(which) {
     var sc = document.getElementById('bonif_cliente');
     var sp = document.getElementById('bonif_pago');
-    var vc = parseFloat(sc.value) || 0;
-    var vp = parseFloat(sp.value) || 0;
-
-    if (vc + vp > BONIF_MAX) {
-        if (which === 'cliente') {
-            vp = Math.round((BONIF_MAX - vc) * 2) / 2;
-            if (vp < 0) vp = 0;
-            sp.value = vp;
-        } else {
-            vc = Math.round((BONIF_MAX - vp) * 2) / 2;
-            if (vc < 0) vc = 0;
-            sc.value = vc;
-        }
-    }
 
     document.getElementById('bonif_cliente_val').textContent = parseFloat(sc.value) + '%';
     document.getElementById('bonif_pago_val').textContent = parseFloat(sp.value) + '%';
     document.getElementById('bonif_total_val').textContent =
-        (parseFloat(sc.value) + parseFloat(sp.value)) + '% / ' + BONIF_MAX + '%';
+        (parseFloat(sc.value) + parseFloat(sp.value)) + '%';
 
     fetchPreview(parseFloat(sc.value), parseFloat(sp.value));
 }
@@ -148,13 +136,13 @@ function onFormaPago(sel) {
     var nombre = opt.dataset.nombre || '';
     var sp = document.getElementById('bonif_pago');
 
-    // Actualizar max y valor al 50% del nuevo rango
-    sp.max = bonif;
-    sp.value = Math.round(bonif / 2 * 2) / 2;
+    // Actualizar max = default de la forma + extra, valor = default
+    var newMax = bonif + EXTRA;
+    sp.max = newMax;
+    sp.value = bonif;
 
-    // Actualizar label con nombre de la forma de pago
     document.getElementById('bonif_pago_label').textContent = 'BONIFICACION ' + nombre.toUpperCase();
-    document.getElementById('bonif_pago_max_label').textContent = 'Max ' + bonif + '%';
+    document.getElementById('bonif_pago_max_label').textContent = 'Max ' + newMax + '%';
 
     onSlider('pago');
 }

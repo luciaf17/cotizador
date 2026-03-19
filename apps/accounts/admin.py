@@ -6,7 +6,7 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ['email', 'nombre', 'rol', 'tenant', 'requiere_validacion', 'activo']
+    list_display = ['email', 'nombre', 'rol', 'tenant', 'bonif_max_porcentaje', 'comision_porcentaje', 'activo']
     list_filter = ['rol', 'activo', 'requiere_validacion', 'tenant']
     search_fields = ['email', 'nombre']
     raw_id_fields = ['tenant']
@@ -15,6 +15,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Info', {'fields': ('nombre', 'tenant', 'rol', 'requiere_validacion', 'activo')}),
+        ('Bonificaciones y comisiones', {'fields': ('bonif_max_porcentaje', 'comision_porcentaje')}),
         ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Fechas', {'fields': ('last_login', 'date_joined')}),
     )

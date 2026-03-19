@@ -208,10 +208,10 @@ class TestFlujo:
         # precio_ar filter: $9.000
         assert b'$9.000' in response.content
 
-    def test_bonif_slider_max_es_bonif_del_concepto(self, auth_client, setup_basico):
-        """Cada slider tiene max del concepto (cliente/pago), no 100."""
+    def test_bonif_slider_max_incluye_extra(self, auth_client, setup_basico):
+        """Slider max = default + extra_por_barra, no 100."""
         s = setup_basico
-        # Cliente tiene bonificacion_porcentaje=10 (del factory)
+        # Cliente bonif=10, user bonif_max=15 → extra=7.5 → slider max=17.5
         auth_client.get(f'/nuevo/{s["cliente"].id}/{s["implemento"].id}/')
         cot = Cotizacion.objects.filter(tenant=s['tenant']).last()
         CotizacionItem.objects.create(
@@ -222,8 +222,8 @@ class TestFlujo:
         response = auth_client.get(f'/{cot.id}/bonificaciones/')
         assert response.status_code == 200
         content = response.content.decode()
-        # Slider cliente max = bonif_porcentaje del cliente (10)
-        assert 'max="10' in content
+        # max = 10 + 7.5 = 17.5
+        assert 'max="17.5"' in content
         assert 'max="100"' not in content
 
     def test_seleccionar_tipo_y_redirige_al_mismo_paso(self, auth_client, setup_basico):

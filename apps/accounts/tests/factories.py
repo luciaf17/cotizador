@@ -12,5 +12,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     nombre = factory.Faker('name')
     rol = 'vendedor'
     requiere_validacion = False
+    bonif_max_porcentaje = 15
+    comision_porcentaje = 5
     activo = True
     password = factory.PostGenerationMethodCall('set_password', 'testpass123')

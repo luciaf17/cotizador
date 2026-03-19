@@ -67,6 +67,12 @@ class Cotizacion(TenantModel):
     precio_total = models.DecimalField(
         max_digits=14, decimal_places=2, default=0,
     )
+    comision_porcentaje_efectivo = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+    )
+    comision_monto = models.DecimalField(
+        max_digits=14, decimal_places=2, default=0,
+    )
     fecha_entrega = models.DateField(null=True, blank=True)
     estado = models.CharField(
         max_length=10, choices=Estado.choices, default=Estado.BORRADOR,
