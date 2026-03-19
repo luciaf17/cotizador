@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}{% if prearmado %}Editar {{ prearmado.nombre }}{% else %}Nuevo Prearmado{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">
+        {% if prearmado %}Editar Prearmado{% else %}Nuevo Prearmado{% endif %}
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Datos basicos -->
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label class="label-dark">Nombre</label>
+                    <input type="text" name="nombre" value="{{ prearmado.nombre|default:'' }}" class="input-dark" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label class="label-dark">Implemento</label>
+                        <select name="implemento" class="input-dark" required>
+                            {% for imp in implementos %}
+                            <option value="{{ imp.id }}" {% if prearmado.implemento_id == imp.id %}selected{% endif %}>{{ imp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-dark">Precio de referencia</label>
+                        <input type="number" name="precio_referencia" value="{{ prearmado.precio_referencia|default:''|stringformat:'.0f' }}" class="input-dark" step="1" min="0" placeholder="Opcional">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estructura -->
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0;">Estructura (productos)</h3>
+                {% if precio_calculado %}
+                <span style="color: #60a5fa; font-size: 15px; font-weight: 700;">Total: {{ precio_calculado|precio_ar }}</span>
+                {% endif %}
+            </div>
+
+            <div id="estructura" style="display: flex; flex-direction: column; gap: 8px;">
+                {% for item in estructura %}
+                <div style="display: grid; grid-template-columns: 1fr 70px 100px 100px; gap: 8px; align-items: center;">
+                    <select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        {% for p in productos %}
+                        <option value="{{ p.id }}" {% if item.est.producto_id == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="prod_cantidad" value="{{ item.est.cantidad }}" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">
+                    <span style="color: #94a3b8; font-size: 11px; text-align: right;">{{ item.precio_unitario|precio_ar }}</span>
+                    <span style="color: #e2e8f0; font-size: 12px; font-weight: 500; text-align: right;">{{ item.precio_linea|precio_ar }}</span>
+                </div>
+                {% endfor %}
+
+                <!-- Fila vacia para agregar -->
+                <div style="display: grid; grid-template-columns: 1fr 70px 100px 100px; gap: 8px; align-items: center;">
+                    <select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        <option value="">+ Agregar producto</option>
+                        {% for p in productos %}
+                        <option value="{{ p.id }}">{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="prod_cantidad" value="1" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">
+                    <span style="color: #475569; font-size: 11px; text-align: right;">—</span>
+                    <span style="color: #475569; font-size: 11px; text-align: right;">—</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; justify-content: space-between;">
+                <span style="color: #475569; font-size: 11px;">Headers: Producto | Cant | Precio unit | Subtotal</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'gestion_prearmados' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Guardar Prearmado</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

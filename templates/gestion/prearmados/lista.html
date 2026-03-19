@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Prearmados{% endblock %}
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Prearmados</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'gestion_prearmado_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nuevo</a>
+            {% if lista %}
+            <a href="{% url 'pdf_prearmados' %}" target="_blank" style="padding: 10px 20px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; font-size: 13px; font-weight: 500; text-decoration: none;">PDF Implementos</a>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
+    </div>
+
+    <form method="get" style="margin-bottom: 16px;">
+        <select name="implemento" class="input-dark" style="width: 250px; padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+            <option value="">Todos los implementos</option>
+            {% for imp in implementos %}
+            <option value="{{ imp.id }}" {% if filtro_implemento == imp.id|stringformat:'d' %}selected{% endif %}>{{ imp.nombre }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <!-- Header -->
+    <div style="display: grid; grid-template-columns: 1fr 120px 120px 100px 80px; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px;">
+        <span class="label-dark" style="margin: 0;">Prearmado</span>
+        <span class="label-dark" style="margin: 0; text-align: right;">Referencia</span>
+        <span class="label-dark" style="margin: 0; text-align: right;">Calculado</span>
+        <span class="label-dark" style="margin: 0; text-align: right;">Diferencia</span>
+        <span class="label-dark" style="margin: 0; text-align: center;">Accion</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        {% for item in prearmados %}
+        <div class="card" style="border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 120px 120px 100px 80px; gap: 8px; align-items: center;">
+            <div>
+                <span style="color: #f1f5f9; font-size: 13px; font-weight: 500;">{{ item.pre.nombre }}</span>
+                <span style="color: #475569; font-size: 11px; margin-left: 8px;">{{ item.pre.implemento.nombre }} &middot; {{ item.estructura_count }} items</span>
+            </div>
+            <span style="color: #64748b; font-size: 13px; text-align: right;">{% if item.pre.precio_referencia %}{{ item.pre.precio_referencia|precio_ar }}{% else %}—{% endif %}</span>
+            <span style="color: #e2e8f0; font-size: 13px; font-weight: 600; text-align: right;">{{ item.precio_calculado|precio_ar }}</span>
+            <div style="text-align: right;">
+                {% if item.diferencia != None %}
+                    {% if item.diferencia > 0 %}
+                    <span style="color: #22c55e; font-size: 12px;">+{{ item.diferencia|precio_ar }}</span>
+                    {% elif item.diferencia < 0 %}
+                    <span style="color: #f87171; font-size: 12px;">{{ item.diferencia|precio_ar }}</span>
+                    {% else %}
+                    <span style="color: #475569; font-size: 12px;">$0</span>
+                    {% endif %}
+                {% else %}
+                <span style="color: #475569; font-size: 12px;">—</span>
+                {% endif %}
+            </div>
+            <div style="text-align: center;">
+                <a href="{% url 'gestion_prearmado_editar' pre_id=item.pre.id %}" style="padding: 5px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 11px; text-decoration: none;">Editar</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="padding: 40px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 13px;">No hay prearmados.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
