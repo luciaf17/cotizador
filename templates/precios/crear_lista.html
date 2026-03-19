@@ -6,7 +6,7 @@
     <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Nueva Lista de Precios</h2>
     <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">Base: Lista #{{ vigente.numero }} ({{ vigente.nombre|default:"vigente" }})</p>
 
-    <form method="post">
+    <form method="post" data-loading="Creando lista...">
         {% csrf_token %}
         <div class="card" style="padding: 24px;">
             <div style="display: flex; flex-direction: column; gap: 20px;">

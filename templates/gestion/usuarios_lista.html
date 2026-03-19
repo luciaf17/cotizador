@@ -31,7 +31,8 @@
                 <span style="color: #64748b; font-size: 11px;">Bonif: {{ u.bonif_max_porcentaje }}% &middot; Com: {{ u.comision_porcentaje }}%</span>
                 <a href="{% url 'usuario_editar' user_id=u.id %}"
                    style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
-                <form method="post" action="{% url 'usuario_toggle_activo' user_id=u.id %}" style="margin: 0;">
+                <form method="post" action="{% url 'usuario_toggle_activo' user_id=u.id %}" style="margin: 0;"
+                      onsubmit="return confirm('{% if u.activo %}Desactivar{% else %}Activar{% endif %} a {{ u.nombre }}?');">
                     {% csrf_token %}
                     {% if u.activo %}
                     <button type="submit" style="padding: 6px 12px; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit;">Desactivar</button>

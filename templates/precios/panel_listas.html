@@ -37,7 +37,8 @@
                 {% if lista.estado == 'borrador' %}
                 <a href="{% url 'editar_lista' lista_id=lista.id %}"
                    style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
-                <form method="post" action="{% url 'activar_lista' lista_id=lista.id %}" style="margin: 0;">
+                <form method="post" action="{% url 'activar_lista' lista_id=lista.id %}" style="margin: 0;"
+                      onsubmit="return confirm('Activar Lista #{{ lista.numero }}? La vigente actual pasara a historica.');">
                     {% csrf_token %}
                     <button type="submit" style="padding: 6px 14px; background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Activar</button>
                 </form>
@@ -58,8 +59,10 @@
             </div>
         </div>
         {% empty %}
-        <div class="card" style="padding: 40px; text-align: center;">
-            <p style="color: #94a3b8;">No hay listas de precios.</p>
+        <div class="card" style="padding: 60px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 12px; opacity: 0.4;">&#128176;</div>
+            <p style="color: #94a3b8; font-size: 14px;">No hay listas de precios todavia</p>
+            <a href="{% url 'crear_lista' %}" class="btn-primary" style="text-decoration: none; display: inline-block; margin-top: 12px; font-size: 13px; padding: 10px 20px;">Crear primera lista</a>
         </div>
         {% endfor %}
     </div>

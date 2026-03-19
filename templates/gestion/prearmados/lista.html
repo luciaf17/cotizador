@@ -59,8 +59,10 @@
             </div>
         </div>
         {% empty %}
-        <div class="card" style="padding: 40px; text-align: center;">
-            <p style="color: #94a3b8; font-size: 13px;">No hay prearmados.</p>
+        <div class="card" style="padding: 60px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 12px; opacity: 0.4;">&#128230;</div>
+            <p style="color: #94a3b8; font-size: 14px;">No hay prearmados todavia</p>
+            <a href="{% url 'gestion_prearmado_crear' %}" class="btn-primary" style="text-decoration: none; display: inline-block; margin-top: 12px; font-size: 13px; padding: 10px 20px;">Crear primer prearmado</a>
         </div>
         {% endfor %}
     </div>

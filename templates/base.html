@@ -105,11 +105,27 @@
         /* Toast */
         .toast {
             position: fixed; top: 76px; right: 28px; z-index: 200;
-            background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
-            color: #22c55e; padding: 12px 20px; border-radius: 10px;
+            padding: 12px 20px; border-radius: 10px;
             font-size: 13px; font-weight: 500; animation: fadeIn 0.3s;
+            max-width: 400px;
         }
+        .toast-success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+        .toast-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+        .toast-info { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+        /* Loading */
+        .btn-loading { opacity: 0.6; pointer-events: none; }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .toast { right: 12px; left: 12px; max-width: none; }
+            main { padding: 16px 12px !important; max-width: 100% !important; }
+            nav > div { padding: 0 12px !important; height: auto !important; min-height: 50px; flex-wrap: wrap; gap: 4px !important; }
+            nav > div > div:first-child { gap: 8px !important; flex-wrap: wrap; }
+            nav > div > div:first-child > div { gap: 2px !important; }
+            nav a, nav span { font-size: 11px !important; padding: 6px 8px !important; }
+            .card { border-radius: 10px !important; }
+        }
         /* Divider */
         .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
         .divider-blue { height: 1px; background: rgba(59,130,246,0.3); margin: 4px 0; }
@@ -154,10 +170,28 @@
     <main style="max-width: 950px; margin: 0 auto; padding: 32px 20px;">
         {% if messages %}
         {% for message in messages %}
-        <div class="toast">{{ message }}</div>
+        <div class="toast toast-{% if message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}success{% endif %}" id="toast-{{ forloop.counter }}">{{ message }}</div>
         {% endfor %}
+        <script>
+        document.querySelectorAll('.toast').forEach(function(t, i) {
+            setTimeout(function() { t.style.animation = 'fadeOut 0.3s forwards'; setTimeout(function() { t.remove(); }, 300); }, 4000 + i * 500);
+        });
+        </script>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+<script>
+// Loading state para forms que demoran
+document.querySelectorAll('form[data-loading]').forEach(function(form) {
+    form.addEventListener('submit', function() {
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.textContent = form.dataset.loading || 'Procesando...';
+        }
+    });
+});
+</script>
 </body>
 </html>
