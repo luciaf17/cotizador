@@ -21,7 +21,9 @@ from apps.tenants.models import Tenant
 from .services import activar_lista, calcular_precio_prearmado, crear_nueva_lista
 
 
-def _get_tenant():
+def _get_tenant(request=None):
+    if request and hasattr(request, 'tenant') and request.tenant:
+        return request.tenant
     return Tenant.objects.filter(activo=True).first()
 
 
@@ -55,7 +57,7 @@ def _generate_pdf(html_string, base_url=None):
 
 @login_required
 def panel_listas(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     listas = ListaPrecio.objects.filter(tenant=tenant).order_by('-numero')
     vigente = listas.filter(estado='vigente').first()
     return render(request, 'precios/panel_listas.html', {
@@ -67,7 +69,7 @@ def panel_listas(request):
 @login_required
 @rol_requerido("admin", "dueno")
 def crear_lista(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     vigente = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
 
     if not vigente:
@@ -88,7 +90,7 @@ def crear_lista(request):
 
 @login_required
 def editar_lista(request, lista_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)
     precios_qs = PrecioProducto.objects.filter(lista=lista).select_related('producto').order_by('producto__nombre')
     q = request.GET.get('q', '').strip()
@@ -142,7 +144,7 @@ def editar_lista(request, lista_id):
 @login_required
 @rol_requerido("admin", "dueno")
 def editar_precio(request, precio_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     pp = get_object_or_404(PrecioProducto, id=precio_id, lista__tenant=tenant)
 
     if request.method == 'POST' and pp.lista.estado == 'borrador':
@@ -161,7 +163,7 @@ def editar_precio(request, precio_id):
 @login_required
 @rol_requerido("admin", "dueno")
 def activar_lista_view(request, lista_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)
 
     if request.method == 'POST' and lista.estado in ('borrador', 'historica'):
@@ -177,7 +179,7 @@ def activar_lista_view(request, lista_id):
 @login_required
 def generar_pdf_cotizacion(request, cotizacion_id):
     from apps.cotizaciones.models import Cotizacion
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     items = cotizacion.items.select_related('producto', 'familia').all()
 
@@ -201,7 +203,7 @@ def generar_pdf_cotizacion(request, cotizacion_id):
 @login_required
 @rol_requerido("admin", "dueno")
 def generar_pdf_prearmados(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     lista = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
 
     if not lista:

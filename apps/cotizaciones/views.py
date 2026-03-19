@@ -202,7 +202,7 @@ def _build_paso_context(cotizacion, orden, tenant):
 
 @login_required
 def inicio(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     tipos_cliente = TipoCliente.objects.filter(tenant=tenant, activo=True) if tenant else []
     return render(request, 'cotizaciones/inicio.html', {
         'tipos_cliente': tipos_cliente,
@@ -211,7 +211,7 @@ def inicio(request):
 
 @login_required
 def buscar_clientes(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     q = request.GET.get('q', '').strip()
     clientes = []
     if q and tenant:
@@ -228,7 +228,7 @@ def buscar_clientes(request):
 
 @login_required
 def crear_cliente(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     if request.method == 'POST':
         tipo_id = request.POST.get('tipo_cliente')
         nombre = request.POST.get('nombre', '').strip()
@@ -263,7 +263,7 @@ def crear_cliente(request):
 
 @login_required
 def seleccionar_implemento(request, cliente_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
     implementos = Implemento.objects.filter(tenant=tenant)
     return render(request, 'cotizaciones/implementos.html', {
@@ -277,7 +277,7 @@ def seleccionar_implemento(request, cliente_id):
 
 @login_required
 def cotizacion_nueva(request, cliente_id, implemento_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
     implemento = get_object_or_404(Implemento, id=implemento_id, tenant=tenant)
     lista = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
@@ -316,7 +316,7 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
 
 @login_required
 def paso(request, cotizacion_id, orden):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     context = _build_paso_context(cotizacion, orden, tenant)
 
@@ -328,7 +328,7 @@ def paso(request, cotizacion_id, orden):
 
 @login_required
 def seleccionar_producto(request, cotizacion_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     if request.method != 'POST':
@@ -404,7 +404,7 @@ def seleccionar_producto(request, cotizacion_id):
 @login_required
 def quitar_item(request, cotizacion_id, item_id):
     """Quitar un item desde el resumen lateral (solo familias con obligatoria=NO)."""
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     if request.method == 'POST':
@@ -423,7 +423,7 @@ def quitar_item(request, cotizacion_id, item_id):
 @login_required
 def paso_rodados(request, cotizacion_id, familia_idx):
     """Paso de rodados: Llantas → Ejes → Elásticos."""
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     # Recalcular con TODOS los items actuales (incluyendo rodados ya elegidos)
@@ -498,7 +498,7 @@ def paso_rodados(request, cotizacion_id, familia_idx):
 @login_required
 def seleccionar_rodado(request, cotizacion_id):
     """Seleccionar un producto de rodados."""
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
     if request.method != 'POST':
@@ -545,7 +545,7 @@ def seleccionar_rodado(request, cotizacion_id):
 
 @login_required
 def bonificaciones(request, cotizacion_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     user = request.user
 
@@ -637,7 +637,7 @@ def bonificaciones(request, cotizacion_id):
 @login_required
 def calcular_preview(request, cotizacion_id):
     """HTMX endpoint para preview de totales en vivo."""
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     user = request.user
 
@@ -719,7 +719,7 @@ def historial(request):
 
 @login_required
 def resumen(request, cotizacion_id):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     items = cotizacion.items.select_related('producto', 'familia').all()
 
@@ -807,7 +807,7 @@ def confirmar(request, cotizacion_id):
 def descargar_pdf(request, cotizacion_id):
     from django.template.loader import render_to_string
     from apps.precios.views import _generate_pdf
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
     items = cotizacion.items.select_related('producto', 'familia').all()
 

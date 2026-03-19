@@ -5,13 +5,15 @@ from django.shortcuts import redirect, render
 from apps.tenants.models import Tenant
 
 
-def _get_tenant():
+def _get_tenant(request=None):
+    if request and hasattr(request, 'tenant') and request.tenant:
+        return request.tenant
     return Tenant.objects.filter(activo=True).first()
 
 
 @login_required
 def configuracion(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     if not tenant:
         return redirect('cotizacion_inicio')
 
