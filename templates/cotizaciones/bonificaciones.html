@@ -5,10 +5,18 @@
 {% block content %}
 <div style="max-width: 550px; margin: 0 auto;">
     <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">Datos y bonificaciones</h2>
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">
-        {{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.implemento.nombre }} &middot;
-        <span style="color: #60a5fa;">{{ cotizacion.numero }}</span>
-    </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+        <p style="color: #64748b; font-size: 14px; margin: 0;">
+            {{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.implemento.nombre }} &middot;
+            <span style="color: #60a5fa;">{{ cotizacion.numero }}</span>
+        </p>
+        {% if ordenes %}
+        <a href="{% url 'cotizacion_paso' cotizacion_id=cotizacion.id orden=ordenes.0 %}"
+           style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">
+            Ver / Editar selecciones
+        </a>
+        {% endif %}
+    </div>
 
     <form method="post">
         {% csrf_token %}
@@ -108,7 +116,11 @@
 
         <!-- Acciones -->
         <div style="display: flex; gap: 12px;">
+            {% if cotizacion.estado == 'borrador' %}
             <a href="{% url 'cotizacion_inicio' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            {% else %}
+            <a href="{% url 'cotizacion_resumen' cotizacion_id=cotizacion.id %}" class="btn-secondary" style="text-decoration: none;">&larr; Volver al Resumen</a>
+            {% endif %}
             <button type="submit" class="btn-primary" style="flex: 1;">Ver Resumen &rarr;</button>
         </div>
     </form>

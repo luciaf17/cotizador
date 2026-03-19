@@ -12,9 +12,16 @@
                 &middot; Cantidad: <span style="color: #60a5fa; font-weight: 600;">{{ cantidad }}</span>
             </p>
         </div>
-        <span style="color: #64748b; font-size: 13px;">
-            Rodado {{ familia_idx|add:1 }} de {{ total_rodados }}
-        </span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: #64748b; font-size: 13px;">
+                Rodado {{ familia_idx|add:1 }} de {{ total_rodados }}
+            </span>
+            {% if cotizacion.estado != 'borrador' %}
+            <a href="{% url 'cotizacion_resumen' cotizacion_id=cotizacion.id %}" class="btn-secondary" style="text-decoration: none; font-size: 12px; padding: 6px 14px;">
+                Volver al Resumen
+            </a>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Stepper rodados -->

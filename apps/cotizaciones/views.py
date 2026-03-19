@@ -630,6 +630,7 @@ def bonificaciones(request, cotizacion_id):
         'fecha_min': date.today().isoformat(),
         'puede_ver_comision': puede_ver_comision,
         'usuario_comision_pct': str(user.comision_porcentaje),
+        'ordenes': _get_ordenes(cotizacion.implemento),
     })
 
 

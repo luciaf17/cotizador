@@ -139,6 +139,10 @@
         {% endif %}
 
         {% if cotizacion.estado == 'borrador' %}
+        <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
+           style="padding: 12px 20px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none;">
+            Editar
+        </a>
         <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
             {% csrf_token %}
             <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>
@@ -146,6 +150,10 @@
 
         {% elif pendiente_aprobacion %}
             {% if es_dueno_admin %}
+            <a href="{% url 'cotizacion_bonificaciones' cotizacion_id=cotizacion.id %}"
+               style="padding: 12px 20px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none;">
+                Modificar Cotizacion
+            </a>
             <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
                 {% csrf_token %}
                 <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>

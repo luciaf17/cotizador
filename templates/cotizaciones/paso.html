@@ -10,6 +10,11 @@
             <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">{{ cotizacion.implemento.nombre }}</h2>
             <p style="color: #64748b; font-size: 13px; margin: 4px 0 0;">{{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.numero }}</p>
         </div>
+        {% if cotizacion.estado != 'borrador' %}
+        <a href="{% url 'cotizacion_resumen' cotizacion_id=cotizacion.id %}" class="btn-secondary" style="text-decoration: none; font-size: 12px; padding: 6px 14px;">
+            Volver al Resumen
+        </a>
+        {% endif %}
     </div>
 
     <!-- Stepper -->
