@@ -23,8 +23,10 @@ from .services import (
 )
 
 
-def _get_tenant():
-    """Obtener tenant por defecto (hasta implementar middleware)."""
+def _get_tenant(request=None):
+    """Obtener tenant del request (middleware) o fallback al primero activo."""
+    if request and hasattr(request, 'tenant') and request.tenant:
+        return request.tenant
     return Tenant.objects.filter(activo=True).first()
 
 
@@ -680,10 +682,14 @@ def calcular_preview(request, cotizacion_id):
 
 @login_required
 def historial(request):
-    tenant = _get_tenant()
+    tenant = _get_tenant(request)
     cotizaciones = Cotizacion.objects.filter(tenant=tenant).select_related(
         'cliente', 'implemento', 'vendedor',
     ).order_by('-created_at')
+
+    # Vendedor ve solo las suyas (SPEC 2.3)
+    if request.user.rol == 'vendedor':
+        cotizaciones = cotizaciones.filter(vendedor=request.user)
 
     # Filtros
     estado = request.GET.get('estado', '')
@@ -733,14 +739,40 @@ def resumen(request, cotizacion_id):
 
 @login_required
 def aprobar(request, cotizacion_id):
-    tenant = _get_tenant()
+    """Aprobar cotización (borrador → aprobada)."""
+    tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
 
-    if request.method == 'POST':
+    if request.method == 'POST' and cotizacion.estado == 'borrador':
         cotizacion.estado = 'aprobada'
         cotizacion.save()
         messages.success(request, f'Cotizacion {cotizacion.numero} aprobada.')
-        return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
+
+    return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
+
+
+@login_required
+def confirmar(request, cotizacion_id):
+    """Confirmar cotización (aprobada → confirmada). Solo dueño/admin, o vendedor sin requiere_validacion."""
+    tenant = _get_tenant(request)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    if request.method == 'POST' and cotizacion.estado == 'aprobada':
+        user = request.user
+        puede_confirmar = (
+            user.is_superuser
+            or user.rol in ('admin', 'dueno')
+            or (user.rol == 'vendedor' and not user.requiere_validacion)
+        )
+        if puede_confirmar:
+            from django.utils import timezone
+            cotizacion.estado = 'confirmada'
+            cotizacion.confirmada_por = user
+            cotizacion.confirmada_at = timezone.now()
+            cotizacion.save()
+            messages.success(request, f'Cotizacion {cotizacion.numero} confirmada.')
+        else:
+            messages.info(request, 'Cotizacion pendiente de confirmacion por el Dueno.')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 

@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+from apps.accounts.decorators import rol_requerido
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -63,6 +65,7 @@ def panel_listas(request):
 
 
 @login_required
+@rol_requerido("admin", "dueno")
 def crear_lista(request):
     tenant = _get_tenant()
     vigente = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
@@ -137,6 +140,7 @@ def editar_lista(request, lista_id):
 
 
 @login_required
+@rol_requerido("admin", "dueno")
 def editar_precio(request, precio_id):
     tenant = _get_tenant()
     pp = get_object_or_404(PrecioProducto, id=precio_id, lista__tenant=tenant)
@@ -155,6 +159,7 @@ def editar_precio(request, precio_id):
 
 
 @login_required
+@rol_requerido("admin", "dueno")
 def activar_lista_view(request, lista_id):
     tenant = _get_tenant()
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)
@@ -194,6 +199,7 @@ def generar_pdf_cotizacion(request, cotizacion_id):
 
 
 @login_required
+@rol_requerido("admin", "dueno")
 def generar_pdf_prearmados(request):
     tenant = _get_tenant()
     lista = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()

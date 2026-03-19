@@ -28,7 +28,7 @@ from apps.tenants.tests.factories import TenantFactory
 @pytest.fixture
 def pdf_setup():
     tenant = TenantFactory()
-    user = UserFactory(tenant=tenant, is_staff=True)
+    user = UserFactory(tenant=tenant, is_staff=True, rol='dueno')
     tipo = TipoClienteFactory(tenant=tenant)
     cliente = ClienteFactory(tenant=tenant, tipo_cliente=tipo)
     imp = ImplementoFactory(tenant=tenant)
