@@ -43,9 +43,18 @@
                 {% endif %}
             </div>
 
-            <div id="estructura" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Header columnas -->
+            <div style="display: grid; grid-template-columns: 1fr 70px 100px 100px 30px; gap: 8px; padding: 0 0 6px;">
+                <span style="color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Producto</span>
+                <span style="color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">Cant</span>
+                <span style="color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Unitario</span>
+                <span style="color: #475569; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Subtotal</span>
+                <span></span>
+            </div>
+
+            <div id="estructura" style="display: flex; flex-direction: column; gap: 6px;">
                 {% for item in estructura %}
-                <div style="display: grid; grid-template-columns: 1fr 70px 100px 100px; gap: 8px; align-items: center;">
+                <div class="fila-estructura" style="display: grid; grid-template-columns: 1fr 70px 100px 100px 30px; gap: 8px; align-items: center;">
                     <select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
                         {% for p in productos %}
                         <option value="{{ p.id }}" {% if item.est.producto_id == p.id %}selected{% endif %}>{{ p.nombre }}</option>
@@ -54,26 +63,16 @@
                     <input type="number" name="prod_cantidad" value="{{ item.est.cantidad }}" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">
                     <span style="color: #94a3b8; font-size: 11px; text-align: right;">{{ item.precio_unitario|precio_ar }}</span>
                     <span style="color: #e2e8f0; font-size: 12px; font-weight: 500; text-align: right;">{{ item.precio_linea|precio_ar }}</span>
+                    <button type="button" onclick="this.closest('.fila-estructura').remove()"
+                            style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid rgba(239,68,68,0.2); background: rgba(239,68,68,0.1); color: #f87171; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&#10005;</button>
                 </div>
                 {% endfor %}
-
-                <!-- Fila vacia para agregar -->
-                <div style="display: grid; grid-template-columns: 1fr 70px 100px 100px; gap: 8px; align-items: center;">
-                    <select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
-                        <option value="">+ Agregar producto</option>
-                        {% for p in productos %}
-                        <option value="{{ p.id }}">{{ p.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                    <input type="number" name="prod_cantidad" value="1" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">
-                    <span style="color: #475569; font-size: 11px; text-align: right;">—</span>
-                    <span style="color: #475569; font-size: 11px; text-align: right;">—</span>
-                </div>
             </div>
 
-            <div style="margin-top: 12px; display: flex; justify-content: space-between;">
-                <span style="color: #475569; font-size: 11px;">Headers: Producto | Cant | Precio unit | Subtotal</span>
-            </div>
+            <button type="button" onclick="agregarFila()"
+                    style="margin-top: 10px; padding: 8px 16px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; font-size: 12px; cursor: pointer; font-family: inherit; width: 100%;">
+                + Agregar producto
+            </button>
         </div>
 
         <div style="display: flex; gap: 12px;">
@@ -82,4 +81,27 @@
         </div>
     </form>
 </div>
+
+<script>
+var optionsHtml = '';
+{% for p in productos %}
+optionsHtml += '<option value="{{ p.id }}">{{ p.nombre|escapejs }}</option>';
+{% endfor %}
+
+function agregarFila() {
+    var container = document.getElementById('estructura');
+    var row = document.createElement('div');
+    row.className = 'fila-estructura';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 70px 100px 100px 30px; gap: 8px; align-items: center;';
+    row.innerHTML =
+        '<select name="prod_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">' +
+        '<option value="">Seleccionar...</option>' + optionsHtml + '</select>' +
+        '<input type="number" name="prod_cantidad" value="1" min="1" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: center;">' +
+        '<span style="color: #475569; font-size: 11px; text-align: right;">—</span>' +
+        '<span style="color: #475569; font-size: 11px; text-align: right;">—</span>' +
+        '<button type="button" onclick="this.closest(\'.fila-estructura\').remove()" ' +
+        'style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid rgba(239,68,68,0.2); background: rgba(239,68,68,0.1); color: #f87171; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">✕</button>';
+    container.appendChild(row);
+}
+</script>
 {% endblock %}
