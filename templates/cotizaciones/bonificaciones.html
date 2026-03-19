@@ -163,7 +163,8 @@ var fetchTimer = null;
 function fetchPreview(vc, vp) {
     clearTimeout(fetchTimer);
     fetchTimer = setTimeout(function() {
-        var url = calcUrl + '?bonif_cliente_pct=' + vc + '&bonif_pago_pct=' + vp;
+        var fpId = document.getElementById('forma_pago').value;
+        var url = calcUrl + '?bonif_cliente_pct=' + vc + '&bonif_pago_pct=' + vp + '&forma_pago_id=' + fpId;
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function(r) { return r.text(); })
             .then(function(html) {

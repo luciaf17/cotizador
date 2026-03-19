@@ -617,14 +617,23 @@ def calcular_preview(request, cotizacion_id):
 
     bonif_cliente_pct = Decimal(request.GET.get('bonif_cliente_pct', '0'))
     bonif_pago_pct = Decimal(request.GET.get('bonif_pago_pct', '0'))
+    forma_pago_id = request.GET.get('forma_pago_id', '')
     bonif_max = tenant.bonif_max_porcentaje if tenant else Decimal('30')
 
     items_data = _get_items_data(cotizacion)
     totales = calcular_totales(items_data, bonif_cliente_pct, bonif_pago_pct, bonif_max)
 
+    # Usar la forma de pago seleccionada en el dropdown, no la guardada
+    forma_pago_nombre = cotizacion.forma_pago.nombre
+    if forma_pago_id:
+        fp = FormaPago.objects.filter(id=forma_pago_id, tenant=tenant).first()
+        if fp:
+            forma_pago_nombre = fp.nombre
+
     return render(request, 'cotizaciones/partials/totales_preview.html', {
         'totales': totales,
         'cotizacion': cotizacion,
+        'forma_pago_nombre': forma_pago_nombre,
     })
 
 
