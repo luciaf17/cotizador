@@ -56,6 +56,7 @@ def _generate_pdf(html_string, base_url=None):
 
 
 @login_required
+@rol_requerido('admin', 'dueno')
 def panel_listas(request):
     tenant = _get_tenant(request)
     listas = ListaPrecio.objects.filter(tenant=tenant).order_by('-numero')
@@ -89,6 +90,7 @@ def crear_lista(request):
 
 
 @login_required
+@rol_requerido('admin', 'dueno')
 def editar_lista(request, lista_id):
     tenant = _get_tenant(request)
     lista = get_object_or_404(ListaPrecio, id=lista_id, tenant=tenant)

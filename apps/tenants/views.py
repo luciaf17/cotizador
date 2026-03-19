@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
+from apps.accounts.decorators import rol_requerido
 from apps.tenants.models import Tenant
 
 
@@ -12,6 +13,7 @@ def _get_tenant(request=None):
 
 
 @login_required
+@rol_requerido('admin', 'dueno')
 def configuracion(request):
     tenant = _get_tenant(request)
     if not tenant:
