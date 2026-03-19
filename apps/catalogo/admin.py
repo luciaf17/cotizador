@@ -34,7 +34,7 @@ class ProductoPropiedadInline(admin.TabularInline):
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'familia', 'implemento', 'cod_comercio', 'iva_porcentaje', 'tenant']
+    list_display = ['nombre', 'familia', 'implemento', 'cod_comercio', 'iva_porcentaje', 'link_web', 'tenant']
     list_filter = ['tenant', 'implemento', 'iva_porcentaje']
     search_fields = ['nombre', 'cod_comercio', 'cod_factura']
     raw_id_fields = ['tenant', 'implemento', 'familia']

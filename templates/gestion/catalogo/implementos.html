@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Implementos{% endblock %}
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Implementos</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'gestion_implemento_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nuevo</a>
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+        {% for item in implementos %}
+        <div class="card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ item.imp.nombre }}</span>
+                {% if item.imp.accesorios_tipo %}
+                <span style="color: #64748b; font-size: 11px; margin-left: 8px;">{{ item.imp.accesorios_tipo }} (nivel {{ item.imp.nivel_rodado }})</span>
+                {% endif %}
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span style="color: #64748b; font-size: 12px;">{{ item.familias }} familias &middot; {{ item.productos }} productos</span>
+                <a href="{% url 'gestion_implemento_editar' imp_id=item.imp.id %}" style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

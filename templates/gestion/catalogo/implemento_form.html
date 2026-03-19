@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{% if implemento %}Editar {{ implemento.nombre }}{% else %}Nuevo Implemento{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">{% if implemento %}Editar Implemento{% else %}Nuevo Implemento{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Nombre</label>
+                    <input type="text" name="nombre" value="{{ implemento.nombre|default:'' }}" class="input-dark" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="label-dark">Accesorios tipo</label>
+                        <select name="accesorios_tipo" class="input-dark">
+                            <option value="">Ninguno</option>
+                            <option value="Rodados" {% if implemento.accesorios_tipo == 'Rodados' %}selected{% endif %}>Rodados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-dark">Nivel rodado</label>
+                        <input type="number" name="nivel_rodado" value="{{ implemento.nivel_rodado|default:'' }}" class="input-dark" min="0">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="{% url 'gestion_implementos' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

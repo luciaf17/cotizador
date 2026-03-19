@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{% if compat %}Editar Compatibilidad{% else %}Nueva Compatibilidad{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">{% if compat %}Editar Compatibilidad{% else %}Nueva Compatibilidad{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Producto padre (trigger)</label>
+                    <select name="producto_padre" class="input-dark" required>
+                        <option value="">Seleccionar...</option>
+                        {% for p in productos %}
+                        <option value="{{ p.id }}" {% if compat.producto_padre_id == p.id %}selected{% endif %}>{{ p.implemento.nombre }} — {{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="label-dark">Producto hijo (afectado)</label>
+                    <select name="producto_hijo" class="input-dark" required>
+                        <option value="">Seleccionar...</option>
+                        {% for p in productos %}
+                        <option value="{{ p.id }}" {% if compat.producto_hijo_id == p.id %}selected{% endif %}>{{ p.implemento.nombre }} — {{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="label-dark">Tipo</label>
+                    <select name="tipo" class="input-dark">
+                        <option value="Vetado" {% if compat.tipo == 'Vetado' %}selected{% endif %}>Vetado (oculta)</option>
+                        <option value="Forzado" {% if compat.tipo == 'Forzado' %}selected{% endif %}>Forzado (muestra)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="{% url 'gestion_compatibilidades' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

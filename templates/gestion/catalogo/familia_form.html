@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if familia %}Editar {{ familia.nombre }}{% else %}Nueva Familia{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">{% if familia %}Editar Familia{% else %}Nueva Familia{% endif %}</h2>
+    <div style="display: grid; grid-template-columns: 1fr 250px; gap: 20px;">
+        <form method="post">
+            {% csrf_token %}
+            <div class="card" style="padding: 24px;">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div>
+                        <label class="label-dark">Implemento</label>
+                        <select name="implemento" class="input-dark" required>
+                            {% for imp in implementos %}
+                            <option value="{{ imp.id }}" {% if familia.implemento_id == imp.id or imp_id == imp.id|stringformat:'d' %}selected{% endif %}>{{ imp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-dark">Nombre</label>
+                        <input type="text" name="nombre" value="{{ familia.nombre|default:'' }}" class="input-dark" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label class="label-dark">Orden</label>
+                            <input type="number" name="orden" value="{{ familia.orden|default:1 }}" class="input-dark" min="1" required>
+                        </div>
+                        <div>
+                            <label class="label-dark">Tipo</label>
+                            <select name="tipo_seleccion" class="input-dark">
+                                <option value="O" {% if familia.tipo_seleccion == 'O' %}selected{% endif %}>Uno (O)</option>
+                                <option value="Y" {% if familia.tipo_seleccion == 'Y' %}selected{% endif %}>Varios (Y)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-dark">Obligatoria</label>
+                            <select name="obligatoria" class="input-dark">
+                                <option value="SI" {% if familia.obligatoria == 'SI' %}selected{% endif %}>Si</option>
+                                <option value="NO" {% if familia.obligatoria == 'NO' %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p style="color: #475569; font-size: 11px; margin: 0;">Si el orden ya existe para ese implemento, tipo y obligatoria se heredan automaticamente.</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <a href="{% url 'gestion_familias' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+                <button type="submit" class="btn-primary" style="flex: 1;">Guardar</button>
+            </div>
+        </form>
+
+        <!-- Arbol de ordenes -->
+        {% if arbol %}
+        <div class="card" style="padding: 16px;">
+            <h3 style="color: #e2e8f0; font-size: 13px; font-weight: 600; margin: 0 0 12px;">Ordenes existentes</h3>
+            {% for f in arbol %}
+            <div style="display: flex; gap: 8px; align-items: center; padding: 4px 0; {% if not forloop.last %}border-bottom: 1px solid rgba(255,255,255,0.04);{% endif %}">
+                <span style="color: #60a5fa; font-size: 12px; font-weight: 600; min-width: 20px;">{{ f.orden }}</span>
+                <span style="color: #cbd5e1; font-size: 12px;">{{ f.nombre }}</span>
+                <span style="color: #475569; font-size: 10px;">{{ f.tipo_seleccion }}/{{ f.obligatoria }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

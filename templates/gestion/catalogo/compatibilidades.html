@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Compatibilidades{% endblock %}
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Compatibilidades</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'gestion_compatibilidad_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nueva</a>
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
+    </div>
+    <form method="get" style="margin-bottom: 16px;">
+        <select name="implemento" class="input-dark" style="width: 250px; padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+            <option value="">Todos los implementos</option>
+            {% for imp in implementos %}
+            <option value="{{ imp.id }}" {% if filtro_implemento == imp.id|stringformat:'d' %}selected{% endif %}>{{ imp.nombre }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+        {% for comp in compats %}
+        <div class="card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="color: #f1f5f9; font-size: 13px;">{{ comp.producto_padre.nombre }}</span>
+                <span style="color: {% if comp.tipo == 'Vetado' %}#f87171{% else %}#22c55e{% endif %}; font-size: 12px; margin: 0 8px;">&rarr; {{ comp.tipo }} &rarr;</span>
+                <span style="color: #cbd5e1; font-size: 13px;">{{ comp.producto_hijo.nombre }}</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <a href="{% url 'gestion_compatibilidad_editar' comp_id=comp.id %}" style="padding: 4px 10px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 11px; text-decoration: none;">Editar</a>
+                <form method="post" action="{% url 'gestion_compatibilidad_eliminar' comp_id=comp.id %}" style="margin: 0;" onsubmit="return confirm('Eliminar esta compatibilidad?');">
+                    {% csrf_token %}
+                    <button type="submit" style="padding: 4px 10px; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit;">Eliminar</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="padding: 40px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 13px;">No hay compatibilidades definidas.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

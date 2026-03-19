@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{% if producto %}Editar {{ producto.nombre }}{% else %}Nuevo Producto{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">{% if producto %}Editar Producto{% else %}Nuevo Producto{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label class="label-dark">Nombre</label>
+                    <input type="text" name="nombre" value="{{ producto.nombre|default:'' }}" class="input-dark" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label class="label-dark">Implemento</label>
+                        <select name="implemento" class="input-dark" required>
+                            {% for imp in implementos %}
+                            <option value="{{ imp.id }}" {% if producto.implemento_id == imp.id %}selected{% endif %}>{{ imp.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-dark">Familia</label>
+                        <select name="familia" class="input-dark" required>
+                            {% for fam in familias %}
+                            <option value="{{ fam.id }}" {% if producto.familia_id == fam.id %}selected{% endif %}>{{ fam.implemento.nombre }} — {{ fam.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label class="label-dark">Cod comercio</label>
+                        <input type="text" name="cod_comercio" value="{{ producto.cod_comercio|default:'' }}" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="label-dark">Plano</label>
+                        <input type="text" name="plano" value="{{ producto.plano|default:'' }}" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="label-dark">Cod factura</label>
+                        <input type="text" name="cod_factura" value="{{ producto.cod_factura|default:'' }}" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="label-dark">Orden</label>
+                        <input type="number" name="orden" value="{{ producto.orden|default:0 }}" class="input-dark" min="0">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+                    <div>
+                        <label class="label-dark">IVA (%)</label>
+                        <input type="number" name="iva_porcentaje" value="{{ producto.iva_porcentaje|default:'21' }}" class="input-dark" step="0.5">
+                    </div>
+                    <div>
+                        <label class="label-dark">Link web</label>
+                        <input type="url" name="link_web" value="{{ producto.link_web|default:'' }}" class="input-dark" placeholder="https://...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Propiedades inline -->
+        <div class="card" style="padding: 24px; margin-bottom: 16px;">
+            <h3 style="color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0 0 16px;">Propiedades</h3>
+            <div id="props-container" style="display: flex; flex-direction: column; gap: 8px;">
+                {% for pp in prod_props %}
+                <div style="display: grid; grid-template-columns: 1fr 100px 120px; gap: 8px; align-items: center;">
+                    <select name="prop_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        {% for p in propiedades %}
+                        <option value="{{ p.id }}" {% if pp.propiedad_id == p.id %}selected{% endif %}>{{ p.nombre }} ({{ p.unidad }})</option>
+                        {% endfor %}
+                    </select>
+                    <select name="prop_tipo" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        <option value="Exacto" {% if pp.tipo == 'Exacto' %}selected{% endif %}>Exacto</option>
+                        <option value="Minimo" {% if pp.tipo == 'Minimo' %}selected{% endif %}>Minimo</option>
+                        <option value="Maximo" {% if pp.tipo == 'Maximo' %}selected{% endif %}>Maximo</option>
+                    </select>
+                    <input type="number" name="prop_valor" value="{{ pp.valor }}" step="0.0001" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: right;">
+                </div>
+                {% endfor %}
+                <!-- Fila vacia para agregar -->
+                <div style="display: grid; grid-template-columns: 1fr 100px 120px; gap: 8px; align-items: center;">
+                    <select name="prop_id" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        <option value="">+ Agregar propiedad</option>
+                        {% for p in propiedades %}
+                        <option value="{{ p.id }}">{{ p.nombre }} ({{ p.unidad }})</option>
+                        {% endfor %}
+                    </select>
+                    <select name="prop_tipo" class="input-dark" style="padding: 6px 8px; font-size: 12px;">
+                        <option value="Exacto">Exacto</option>
+                        <option value="Minimo">Minimo</option>
+                        <option value="Maximo">Maximo</option>
+                    </select>
+                    <input type="number" name="prop_valor" value="" step="0.0001" class="input-dark" style="padding: 6px 8px; font-size: 12px; text-align: right;" placeholder="Valor">
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'gestion_productos' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

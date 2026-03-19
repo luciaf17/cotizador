@@ -46,7 +46,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;
                         {% if forloop.counter|divisibleby:2 %}background: rgba(255,255,255,0.02); margin: 0 -8px; padding: 6px 8px; border-radius: 6px;{% endif %}">
                 <div>
-                    <span style="color: #94a3b8; font-size: 14px;">{{ item.producto.nombre }}</span>
+                    <span style="color: #94a3b8; font-size: 14px;">{{ item.producto.nombre }}{% if item.producto.link_web %} <a href="{{ item.producto.link_web }}" target="_blank" style="color: #60a5fa; font-size: 12px; text-decoration: none;" title="Ver producto">&#8599;</a>{% endif %}</span>
                     <span style="color: #475569; font-size: 12px; margin-left: 8px;">{{ item.familia.nombre }}</span>
                 </div>
                 <span style="color: #e2e8f0; font-size: 14px; font-weight: 500;">{{ item.precio_linea|precio_ar }}</span>

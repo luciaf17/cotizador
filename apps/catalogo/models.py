@@ -63,6 +63,7 @@ class Producto(TenantModel):
     plano = models.CharField(max_length=100, null=True, blank=True)
     cod_factura = models.CharField(max_length=100, null=True, blank=True)
     orden = models.IntegerField(default=0)
+    link_web = models.URLField(max_length=500, null=True, blank=True, verbose_name='Link web')
     iva_porcentaje = models.DecimalField(
         max_digits=5, decimal_places=2, default=21,
         verbose_name='IVA (%)',
