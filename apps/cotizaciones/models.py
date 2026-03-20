@@ -9,6 +9,7 @@ class Cotizacion(TenantModel):
         BORRADOR = 'borrador', 'Borrador'
         APROBADA = 'aprobada', 'Aprobada'
         CONFIRMADA = 'confirmada', 'Confirmada'
+        DESCARTADA = 'descartada', 'Descartada'
 
     implemento = models.ForeignKey(
         'catalogo.Implemento', on_delete=models.CASCADE,

@@ -15,6 +15,7 @@
             <option value="borrador" {% if filtro_estado == 'borrador' %}selected{% endif %}>Borrador</option>
             <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Aprobada</option>
             <option value="confirmada" {% if filtro_estado == 'confirmada' %}selected{% endif %}>Confirmada</option>
+            <option value="descartada" {% if filtro_estado == 'descartada' %}selected{% endif %}>Descartada</option>
         </select>
         <select name="implemento" class="input-dark" style="width: 200px;" onchange="this.form.submit()">
             <option value="">Todos los implementos</option>

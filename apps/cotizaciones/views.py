@@ -759,6 +759,9 @@ def historial(request):
     estado = request.GET.get('estado', '')
     if estado:
         cotizaciones = cotizaciones.filter(estado=estado)
+    else:
+        # Ocultar descartadas por defecto
+        cotizaciones = cotizaciones.exclude(estado='descartada')
     implemento_id = request.GET.get('implemento', '')
     if implemento_id:
         cotizaciones = cotizaciones.filter(implemento_id=implemento_id)
@@ -861,6 +864,21 @@ def confirmar(request, cotizacion_id):
         cotizacion.confirmada_at = timezone.now()
         cotizacion.save()
         messages.success(request, f'Cotizacion {cotizacion.numero} confirmada.')
+
+    return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
+
+
+@login_required
+def descartar(request, cotizacion_id):
+    """Descartar cotización (solo borradores)."""
+    tenant = _get_tenant(request)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    if request.method == 'POST' and cotizacion.estado == 'borrador':
+        cotizacion.estado = 'descartada'
+        cotizacion.save()
+        messages.success(request, f'Cotizacion {cotizacion.numero} descartada.')
+        return redirect('cotizacion_historial')
 
     return redirect('cotizacion_resumen', cotizacion_id=cotizacion.id)
 

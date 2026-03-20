@@ -31,9 +31,10 @@ urlpatterns = [
     path('<int:cotizacion_id>/calcular/', views.calcular_preview, name='cotizacion_calcular'),
     # Resumen final
     path('<int:cotizacion_id>/resumen/', views.resumen, name='cotizacion_resumen'),
-    # Aprobar y confirmar
+    # Aprobar, confirmar y descartar
     path('<int:cotizacion_id>/aprobar/', views.aprobar, name='cotizacion_aprobar'),
     path('<int:cotizacion_id>/confirmar/', views.confirmar, name='cotizacion_confirmar'),
+    path('<int:cotizacion_id>/descartar/', views.descartar, name='cotizacion_descartar'),
     # PDF
     path('<int:cotizacion_id>/pdf/', views.descargar_pdf, name='cotizacion_pdf'),
 ]

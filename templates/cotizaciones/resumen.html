@@ -143,10 +143,22 @@
            style="padding: 12px 20px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; font-size: 14px; font-weight: 500; text-decoration: none;">
             Editar
         </a>
+        <form method="post" action="{% url 'cotizacion_descartar' cotizacion_id=cotizacion.id %}" style="margin: 0;"
+              onsubmit="return confirm('Descartar esta cotizacion? No se podra revertir.');">
+            {% csrf_token %}
+            <button type="submit" style="padding: 12px 20px; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;">
+                Descartar
+            </button>
+        </form>
         <form method="post" action="{% url 'cotizacion_aprobar' cotizacion_id=cotizacion.id %}" style="flex: 1;">
             {% csrf_token %}
             <button type="submit" class="btn-success" style="width: 100%;">&#10003; Aprobar Cotizacion</button>
         </form>
+
+        {% elif cotizacion.estado == 'descartada' %}
+        <span style="color: #f87171; font-size: 13px; padding: 12px 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;">
+            Descartada
+        </span>
 
         {% elif pendiente_aprobacion %}
             {% if es_dueno_admin %}
