@@ -72,7 +72,10 @@ def dashboard(request):
 @rol_requerido('admin', 'dueno')
 def usuarios_lista(request):
     tenant = _get_tenant(request)
-    usuarios = User.objects.filter(tenant=tenant).order_by('rol', 'nombre')
+    qs = User.objects.filter(tenant=tenant)
+    if request.user.rol != 'admin':
+        qs = qs.exclude(rol='admin')
+    usuarios = qs.order_by('rol', 'nombre')
     return render(request, 'gestion/usuarios_lista.html', {'usuarios': usuarios})
 
 
@@ -217,6 +220,86 @@ def forma_pago_guardar(request):
 
         messages.success(request, f'Forma de pago "{nombre}" guardada.')
     return redirect('formas_pago_lista')
+
+
+# ── CRUD Clientes ────────────────────────────────────────────────────
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def clientes_lista(request):
+    tenant = _get_tenant(request)
+    clientes = Cliente.objects.filter(tenant=tenant).select_related('tipo_cliente').order_by('nombre')
+    return render(request, 'gestion/clientes_lista.html', {'clientes': clientes})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def cliente_crear(request):
+    tenant = _get_tenant(request)
+    tipos = TipoCliente.objects.filter(tenant=tenant, activo=True)
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        tipo_id = request.POST.get('tipo_cliente')
+        telefono = request.POST.get('telefono', '').strip() or None
+        email = request.POST.get('email', '').strip() or None
+        direccion = request.POST.get('direccion', '').strip() or None
+        bonif = Decimal(request.POST.get('bonificacion_porcentaje', '0'))
+
+        if not nombre or not tipo_id:
+            messages.error(request, 'Nombre y tipo de cliente son obligatorios.')
+            return render(request, 'gestion/cliente_form.html', {'modo': 'crear', 'tipos': tipos})
+
+        tipo = get_object_or_404(TipoCliente, id=tipo_id, tenant=tenant)
+        Cliente.objects.create(
+            tenant=tenant, tipo_cliente=tipo, nombre=nombre,
+            telefono=telefono, email=email, direccion=direccion,
+            bonificacion_porcentaje=bonif,
+        )
+        messages.success(request, f'Cliente "{nombre}" creado.')
+        return redirect('clientes_lista')
+
+    return render(request, 'gestion/cliente_form.html', {'modo': 'crear', 'tipos': tipos})
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def cliente_editar(request, cliente_id):
+    tenant = _get_tenant(request)
+    cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
+    tipos = TipoCliente.objects.filter(tenant=tenant, activo=True)
+
+    if request.method == 'POST':
+        cliente.nombre = request.POST.get('nombre', cliente.nombre).strip()
+        tipo_id = request.POST.get('tipo_cliente')
+        if tipo_id:
+            cliente.tipo_cliente = get_object_or_404(TipoCliente, id=tipo_id, tenant=tenant)
+        cliente.telefono = request.POST.get('telefono', '').strip() or None
+        cliente.email = request.POST.get('email', '').strip() or None
+        cliente.direccion = request.POST.get('direccion', '').strip() or None
+        cliente.bonificacion_porcentaje = Decimal(request.POST.get('bonificacion_porcentaje', '0'))
+        cliente.save()
+        messages.success(request, f'Cliente "{cliente.nombre}" actualizado.')
+        return redirect('clientes_lista')
+
+    return render(request, 'gestion/cliente_form.html', {
+        'modo': 'editar',
+        'cliente': cliente,
+        'tipos': tipos,
+    })
+
+
+@login_required
+@rol_requerido('admin', 'dueno')
+def cliente_eliminar(request, cliente_id):
+    tenant = _get_tenant(request)
+    cliente = get_object_or_404(Cliente, id=cliente_id, tenant=tenant)
+    if request.method == 'POST':
+        nombre = cliente.nombre
+        cliente.delete()
+        messages.success(request, f'Cliente "{nombre}" eliminado.')
+    return redirect('clientes_lista')
 
 
 # ── Reportes ─────────────────────────────────────────────────────────

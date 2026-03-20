@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Clientes</h2>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'cliente_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 10px 20px;">Nuevo Cliente</a>
+            <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div style="margin-bottom: 16px;">
+        <input type="text" id="buscarCliente" placeholder="Buscar por nombre, email o telefono..." class="input-dark" style="width: 100%; padding: 10px 14px; font-size: 13px;" oninput="filtrarClientes()">
+    </div>
+
+    <div id="listaClientes" style="display: flex; flex-direction: column; gap: 6px;">
+        {% for c in clientes %}
+        <div class="card cliente-row" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;" data-search="{{ c.nombre|lower }} {{ c.email|default:''|lower }} {{ c.telefono|default:''|lower }}">
+            <div style="display: flex; gap: 20px; align-items: center; flex: 1; min-width: 0;">
+                <div style="min-width: 0; flex: 1;">
+                    <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">{{ c.nombre }}</span>
+                    <div style="color: #64748b; font-size: 12px; margin-top: 2px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        {% if c.email %}<span>{{ c.email }}</span>{% endif %}
+                        {% if c.telefono %}<span>{{ c.telefono }}</span>{% endif %}
+                    </div>
+                </div>
+                <span class="badge-status badge-vigente" style="font-size: 11px; white-space: nowrap;">{{ c.tipo_cliente.nombre }}</span>
+                <span style="color: #60a5fa; font-size: 12px; white-space: nowrap;">Bonif: {{ c.bonificacion_porcentaje }}%</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-left: 12px;">
+                <a href="{% url 'cliente_editar' cliente_id=c.id %}"
+                   style="padding: 6px 14px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; text-decoration: none;">Editar</a>
+                <form method="post" action="{% url 'cliente_eliminar' cliente_id=c.id %}" style="margin: 0;"
+                      onsubmit="return confirm('Eliminar a {{ c.nombre }}?');">
+                    {% csrf_token %}
+                    <button type="submit" style="padding: 6px 12px; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit;">Eliminar</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="padding: 32px; text-align: center;">
+            <p style="color: #64748b; font-size: 14px; margin: 0;">No hay clientes cargados.</p>
+            <a href="{% url 'cliente_crear' %}" class="btn-primary" style="text-decoration: none; font-size: 13px; padding: 8px 20px; display: inline-block; margin-top: 12px;">Crear primer cliente</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if clientes %}
+    <div style="margin-top: 12px; color: #64748b; font-size: 12px;">
+        {{ clientes|length }} cliente{{ clientes|length|pluralize:"s" }}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function filtrarClientes() {
+    var q = document.getElementById('buscarCliente').value.toLowerCase();
+    var rows = document.querySelectorAll('.cliente-row');
+    rows.forEach(function(row) {
+        row.style.display = row.dataset.search.indexOf(q) >= 0 ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

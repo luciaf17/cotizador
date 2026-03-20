@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'crear' %}Nuevo Cliente{% else %}Editar {{ cliente.nombre }}{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 28px;">
+        {% if modo == 'crear' %}Nuevo Cliente{% else %}Editar {{ cliente.nombre }}{% endif %}
+    </h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label class="label-dark">Nombre *</label>
+                    <input type="text" name="nombre" value="{{ cliente.nombre|default:'' }}" class="input-dark" required>
+                </div>
+                <div>
+                    <label class="label-dark">Tipo de Cliente *</label>
+                    <select name="tipo_cliente" class="input-dark" required>
+                        <option value="">Seleccionar...</option>
+                        {% for tipo in tipos %}
+                        <option value="{{ tipo.id }}" {% if cliente.tipo_cliente_id == tipo.id %}selected{% endif %}>{{ tipo.nombre }} ({{ tipo.bonificacion_default }}%)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label class="label-dark">Telefono</label>
+                        <input type="text" name="telefono" value="{{ cliente.telefono|default:'' }}" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="label-dark">Email</label>
+                        <input type="email" name="email" value="{{ cliente.email|default:'' }}" class="input-dark">
+                    </div>
+                </div>
+                <div>
+                    <label class="label-dark">Direccion</label>
+                    <textarea name="direccion" class="input-dark" rows="2" style="resize: vertical;">{{ cliente.direccion|default:'' }}</textarea>
+                </div>
+                <div>
+                    <label class="label-dark">Bonificacion (%)</label>
+                    <input type="number" name="bonificacion_porcentaje" value="{{ cliente.bonificacion_porcentaje|default:'0' }}" class="input-dark" step="0.5" min="0">
+                    <div style="color: #64748b; font-size: 11px; margin-top: 4px;">Si se deja en 0, se usara la bonificacion del tipo de cliente.</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <a href="{% url 'clientes_lista' %}" class="btn-secondary" style="text-decoration: none;">&larr; Cancelar</a>
+            <button type="submit" class="btn-primary" style="flex: 1;">
+                {% if modo == 'crear' %}Crear Cliente{% else %}Guardar Cambios{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
