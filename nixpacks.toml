@@ -1,5 +1,2 @@
 [phases.setup]
 nixPkgs = ["...", "gobject-introspection", "pango", "cairo", "gdk-pixbuf", "libffi", "zlib"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
