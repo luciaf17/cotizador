@@ -25,11 +25,13 @@ def configuracion(request):
         tenant.color_secundario = request.POST.get('color_secundario', tenant.color_secundario)
         tenant.bonif_max_porcentaje = request.POST.get('bonif_max_porcentaje', tenant.bonif_max_porcentaje)
 
-        if request.FILES.get('logo'):
-            tenant.logo = request.FILES['logo']
-
         if request.POST.get('quitar_logo'):
             tenant.logo = None
+        elif request.FILES.get('logo'):
+            import os
+            from django.conf import settings
+            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+            tenant.logo = request.FILES['logo']
 
         tenant.save()
         messages.success(request, 'Configuracion actualizada.')
