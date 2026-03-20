@@ -119,7 +119,6 @@ class Command(BaseCommand):
             slug='ceibo',
             defaults={
                 'nombre': 'Metalúrgica Ceibo',
-                'bonif_max_porcentaje': Decimal('30.00'),
                 'moneda': 'ARS',
             },
         )
