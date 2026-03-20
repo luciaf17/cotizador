@@ -7,12 +7,15 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin: 0;">Reportes</h2>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <form method="get" style="margin: 0;">
-                <select name="estado" class="input-dark" style="width: 180px; padding: 8px 12px; font-size: 13px;" onchange="this.form.submit()">
+            <form method="get" style="margin: 0; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <select name="estado" class="input-dark" style="width: 170px; padding: 8px 12px; font-size: 13px;">
                     <option value="confirmada" {% if filtro_estado == 'confirmada' %}selected{% endif %}>Solo confirmadas</option>
                     <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Solo aprobadas</option>
                     <option value="todas" {% if filtro_estado == 'todas' %}selected{% endif %}>Todas</option>
                 </select>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;" placeholder="Desde">
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;" placeholder="Hasta">
+                <button type="submit" style="padding: 8px 14px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;">Filtrar</button>
             </form>
             <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
         </div>

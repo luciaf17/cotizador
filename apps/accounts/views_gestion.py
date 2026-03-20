@@ -228,12 +228,19 @@ def reportes(request):
     tenant = _get_tenant(request)
 
     filtro_estado = request.GET.get('estado', 'confirmada')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+
     qs = Cotizacion.objects.filter(tenant=tenant)
     if filtro_estado == 'confirmada':
         qs = qs.filter(estado='confirmada')
     elif filtro_estado == 'aprobada':
         qs = qs.filter(estado='aprobada')
-    # 'todas' = sin filtro de estado
+
+    if fecha_desde:
+        qs = qs.filter(created_at__date__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(created_at__date__lte=fecha_hasta)
 
     total_monto = qs.aggregate(t=Sum('precio_total'))['t'] or Decimal('0')
     total_comision = qs.aggregate(t=Sum('comision_monto'))['t'] or Decimal('0')
@@ -267,4 +274,6 @@ def reportes(request):
         'por_implemento': por_implemento,
         'por_cliente': por_cliente,
         'filtro_estado': filtro_estado,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
     })
