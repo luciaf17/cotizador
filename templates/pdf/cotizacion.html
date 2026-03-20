@@ -87,7 +87,7 @@
     <tbody>
         {% for item in items %}
         <tr>
-            <td>{{ item.producto.nombre }}</td>
+            <td>{{ item.producto.nombre }}{% if item.producto.link_web %} <a href="{{ item.producto.link_web }}" style="color: #60a5fa; font-size: 7pt; text-decoration: none;">ver &#8599;</a>{% endif %}</td>
             <td style="text-align: center;">{{ item.cantidad }}</td>
         </tr>
         {% endfor %}
