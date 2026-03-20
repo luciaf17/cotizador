@@ -188,8 +188,8 @@ def producto_form(request, prod_id=None):
         cod_comercio = request.POST.get('cod_comercio', '').strip() or None
         plano = request.POST.get('plano', '').strip() or None
         cod_factura = request.POST.get('cod_factura', '').strip() or None
-        orden = int(request.POST.get('orden', 0))
-        iva_porcentaje = Decimal(request.POST.get('iva_porcentaje', '21'))
+        orden = int(request.POST.get('orden') or 0)
+        iva_porcentaje = Decimal(request.POST.get('iva_porcentaje') or '21')
         link_web = request.POST.get('link_web', '').strip() or None
 
         imp = get_object_or_404(Implemento, id=implemento_id, tenant=tenant)
