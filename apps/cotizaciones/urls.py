@@ -15,6 +15,7 @@ urlpatterns = [
     path('implementos/<int:cliente_id>/', views.seleccionar_implemento, name='seleccionar_implemento'),
     # Flujo step-by-step
     path('nuevo/<int:cliente_id>/<int:implemento_id>/', views.cotizacion_nueva, name='cotizacion_nueva'),
+    path('<int:cotizacion_id>/cargar-prearmado/', views.cargar_prearmado, name='cargar_prearmado'),
     # Paso HTMX
     path('<int:cotizacion_id>/paso/<int:orden>/', views.paso, name='cotizacion_paso'),
     # Seleccionar producto en paso

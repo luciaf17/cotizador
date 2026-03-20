@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block title %}Prearmado — {{ cotizacion.implemento.nombre }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 8px;">{{ cotizacion.implemento.nombre }}</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">
+        {{ cotizacion.cliente.nombre }} &middot; {{ cotizacion.numero }}
+    </p>
+
+    <div class="card" style="padding: 28px; margin-bottom: 16px;">
+        <h3 style="color: #e2e8f0; font-size: 16px; font-weight: 600; margin: 0 0 8px;">Usar un prearmado como base?</h3>
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 24px;">
+            Selecciona un prearmado para cargar automaticamente todos sus productos.
+            Despues podes modificar lo que quieras.
+        </p>
+
+        <form method="post" action="{% url 'cargar_prearmado' cotizacion_id=cotizacion.id %}">
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;">
+                {% for pre in prearmados %}
+                <label class="option-item" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="radio" name="prearmado_id" value="{{ pre.id }}" style="accent-color: #3b82f6;">
+                        <div>
+                            <span style="color: #f1f5f9; font-size: 14px;">{{ pre.nombre }}</span>
+                            {% if pre.precio_referencia %}
+                            <span style="color: #64748b; font-size: 12px; margin-left: 8px;">Ref: {{ pre.precio_referencia|precio_ar }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn-primary" style="flex: 1;" name="prearmado_id" value="">
+                    Cotizar desde cero
+                </button>
+                <button type="submit" class="btn-success" style="flex: 1;">
+                    Cargar prearmado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

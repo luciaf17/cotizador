@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.catalogo.models import Familia, Implemento, Producto, Propiedad
 from apps.clientes.models import Cliente, FormaPago, TipoCliente
-from apps.precios.models import ListaPrecio, PrecioProducto
+from apps.precios.models import EstructuraPrearmado, ListaPrecio, Prearmado, PrecioProducto
 from apps.tenants.models import Tenant
 
 from .models import Cotizacion, CotizacionItem
@@ -304,11 +304,73 @@ def cotizacion_nueva(request, cliente_id, implemento_id):
         numero=numero,
     )
 
+    # Si hay prearmados para este implemento, mostrar paso intermedio
+    prearmados = Prearmado.objects.filter(tenant=tenant, implemento=implemento)
+    if prearmados.exists():
+        return render(request, 'cotizaciones/prearmado_rapido.html', {
+            'cotizacion': cotizacion,
+            'prearmados': prearmados,
+        })
+
     ordenes = _get_ordenes(implemento)
     if ordenes:
         return redirect('cotizacion_paso', cotizacion_id=cotizacion.id, orden=ordenes[0])
 
     return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion.id)
+
+
+@login_required
+def cargar_prearmado(request, cotizacion_id):
+    """Carga productos de un prearmado en la cotización y salta a bonificaciones."""
+    tenant = _get_tenant(request)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
+
+    if request.method == 'POST':
+        prearmado_id = request.POST.get('prearmado_id')
+
+        if not prearmado_id:
+            # "Cotizar desde cero" — ir al paso 1
+            ordenes = _get_ordenes(cotizacion.implemento)
+            if ordenes:
+                return redirect('cotizacion_paso', cotizacion_id=cotizacion.id, orden=ordenes[0])
+            return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion.id)
+
+        prearmado = get_object_or_404(Prearmado, id=prearmado_id, tenant=tenant)
+        estructura = EstructuraPrearmado.objects.filter(prearmado=prearmado).select_related('producto', 'producto__familia')
+
+        # Limpiar items existentes
+        cotizacion.items.all().delete()
+
+        descartados = []
+        cargados = 0
+        for est in estructura:
+            prod = est.producto
+            # Obtener precio
+            precio = Decimal('0')
+            try:
+                pp = PrecioProducto.objects.get(lista=cotizacion.lista, producto=prod)
+                precio = pp.precio
+            except PrecioProducto.DoesNotExist:
+                pass
+
+            CotizacionItem.objects.create(
+                cotizacion=cotizacion,
+                producto=prod,
+                familia=prod.familia,
+                cantidad=est.cantidad,
+                precio_unitario=precio,
+                precio_linea=precio * est.cantidad,
+                iva_porcentaje=prod.iva_porcentaje,
+            )
+            cargados += 1
+
+        if descartados:
+            messages.warning(request, f'Se descartaron {len(descartados)} productos incompatibles: {", ".join(descartados)}')
+
+        messages.success(request, f'Prearmado "{prearmado.nombre}" cargado ({cargados} productos). Ajusta bonificaciones.')
+        return redirect('cotizacion_bonificaciones', cotizacion_id=cotizacion.id)
+
+    return redirect('cotizacion_inicio')
 
 
 # ── Paso step-by-step ────────────────────────────────────────────────

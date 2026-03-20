@@ -38,7 +38,7 @@
                         {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
                     </div>
                     <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
-                    {% if pdata.producto.link_web %}<a href="{{ pdata.producto.link_web }}" target="_blank" onclick="event.stopPropagation();" style="color: #60a5fa; font-size: 12px; text-decoration: none; margin-left: 4px;" title="Ver producto">&#8599;</a>{% endif %}
+                    {% if pdata.producto.link_web %}<a href="{{ pdata.producto.link_web }}" target="_blank" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');" style="color: #60a5fa; font-size: 14px; text-decoration: none; margin-left: 4px; padding: 2px 4px;" title="Ver producto">&#8599;</a>{% endif %}
                 </div>
                 {% if pdata.precio %}
                 <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
@@ -65,7 +65,7 @@
                         {% if pdata.seleccionado %}<span style="color: #fff; font-size: 11px;">&#10003;</span>{% endif %}
                     </div>
                     <span style="color: {% if pdata.seleccionado %}#f1f5f9{% else %}#cbd5e1{% endif %}; font-size: 14px;">{{ pdata.producto.nombre }}</span>
-                    {% if pdata.producto.link_web %}<a href="{{ pdata.producto.link_web }}" target="_blank" onclick="event.stopPropagation();" style="color: #60a5fa; font-size: 12px; text-decoration: none; margin-left: 4px;" title="Ver producto">&#8599;</a>{% endif %}
+                    {% if pdata.producto.link_web %}<a href="{{ pdata.producto.link_web }}" target="_blank" onclick="event.stopPropagation(); event.preventDefault(); window.open(this.href, '_blank');" style="color: #60a5fa; font-size: 14px; text-decoration: none; margin-left: 4px; padding: 2px 4px;" title="Ver producto">&#8599;</a>{% endif %}
                 </div>
                 {% if pdata.precio %}
                 <span style="color: {% if pdata.seleccionado %}#60a5fa{% else %}#64748b{% endif %}; font-size: 13px; font-weight: 500;">
