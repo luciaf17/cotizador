@@ -7,6 +7,21 @@
         {% if prearmado %}Editar Prearmado{% else %}Nuevo Prearmado{% endif %}
     </h2>
 
+    {% if prearmados_existentes %}
+    <div class="card" style="padding: 16px 20px; margin-bottom: 16px; border-color: rgba(59,130,246,0.2);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label style="color: #94a3b8; font-size: 12px; font-weight: 600; white-space: nowrap;">Usar como base</label>
+            <select id="select-base" class="input-dark" style="flex: 1; padding: 8px 12px; font-size: 13px; min-width: 200px;"
+                    onchange="if(this.value) window.location='{% url 'gestion_prearmado_crear' %}?base='+this.value;">
+                <option value="">Empezar vacio</option>
+                {% for pre in prearmados_existentes %}
+                <option value="{{ pre.id }}">{{ pre.nombre }} ({{ pre.implemento.nombre }})</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
 

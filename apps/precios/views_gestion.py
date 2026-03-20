@@ -60,9 +60,16 @@ def prearmado_form(request, pre_id=None):
     productos = Producto.objects.filter(tenant=tenant).order_by('implemento__nombre', 'nombre')
     lista = ListaPrecio.objects.filter(tenant=tenant, estado='vigente').first()
 
+    # Cargar estructura desde prearmado existente o desde base
+    fuente = prearmado
+    if not fuente and not pre_id:
+        base_id = request.GET.get('base', '')
+        if base_id:
+            fuente = Prearmado.objects.filter(id=base_id, tenant=tenant).first()
+
     estructura = []
-    if prearmado:
-        for est in EstructuraPrearmado.objects.filter(prearmado=prearmado).select_related('producto'):
+    if fuente:
+        for est in EstructuraPrearmado.objects.filter(prearmado=fuente).select_related('producto'):
             precio = Decimal('0')
             if lista:
                 try:
@@ -74,6 +81,8 @@ def prearmado_form(request, pre_id=None):
                 'precio_unitario': precio,
                 'precio_linea': precio * est.cantidad,
             })
+
+    prearmados_existentes = Prearmado.objects.filter(tenant=tenant).order_by('nombre') if not pre_id else []
 
     precio_calculado = sum(e['precio_linea'] for e in estructura)
 
@@ -126,4 +135,5 @@ def prearmado_form(request, pre_id=None):
         'estructura': estructura,
         'precio_calculado': precio_calculado,
         'precios_map': precios_map,
+        'prearmados_existentes': prearmados_existentes,
     })
