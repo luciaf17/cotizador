@@ -42,7 +42,7 @@
 <div class="header">
     <div class="right">
         Fecha: {{ cotizacion.created_at|date:"d/m/Y" }}<br>
-        {% if cotizacion.fecha_entrega %}Entrega: {{ cotizacion.fecha_entrega|date:"d/m/Y" }}<br>{% endif %}
+        {% if cotizacion.fecha_entrega %}Entrega aprox: {{ cotizacion.fecha_entrega|date:"d/m/Y" }}<br>{% endif %}
         Vendedor: {{ cotizacion.vendedor.nombre|default:cotizacion.vendedor.email }}
     </div>
     {% if logo_url %}
