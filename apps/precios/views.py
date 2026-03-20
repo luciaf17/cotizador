@@ -46,10 +46,16 @@ def _get_logo_url(tenant):
 
 def _generate_pdf(html_string, base_url=None):
     """Genera PDF desde HTML string con WeasyPrint."""
-    from weasyprint import HTML
-    from django.conf import settings
-    burl = base_url or str(settings.BASE_DIR)
-    return HTML(string=html_string, base_url=burl).write_pdf()
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from weasyprint import HTML
+        from django.conf import settings
+        burl = base_url or str(settings.BASE_DIR)
+        return HTML(string=html_string, base_url=burl).write_pdf()
+    except Exception as e:
+        logger.error(f'Error generando PDF: {e}', exc_info=True)
+        raise
 
 
 # ── Listas de precios ────────────────────────────────────────────────
