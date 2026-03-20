@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
     tailwind.config = {
         theme: {
@@ -129,6 +130,62 @@
         /* Divider */
         .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
         .divider-blue { height: 1px; background: rgba(59,130,246,0.3); margin: 4px 0; }
+
+        /* ── Animations ── */
+        /* Page fade-in */
+        main { animation: fadeSlideUp 0.3s ease-out; }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Card hover */
+        .card { transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+
+        /* Option item selection */
+        .option-item { transition: all 0.2s ease; }
+        .option-item.selected { transform: scale(1.01); }
+        .option-item:active { transform: scale(0.99); }
+
+        /* Button hover */
+        .btn-primary, .btn-success, .btn-secondary { transition: all 0.2s ease; }
+        .btn-primary:hover, .btn-success:hover { transform: translateY(-1px); }
+        .btn-secondary:hover { transform: translateY(-1px); }
+
+        /* Stepper pulse */
+        .step-active { animation: stepPulse 2s ease-in-out infinite; }
+        @keyframes stepPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); } }
+
+        /* Step done bounce */
+        .step-done { animation: stepBounce 0.4s ease-out; }
+        @keyframes stepBounce { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* Stagger children */
+        .stagger > * { opacity: 0; animation: fadeSlideUp 0.3s ease-out forwards; }
+        .stagger > *:nth-child(1) { animation-delay: 0s; }
+        .stagger > *:nth-child(2) { animation-delay: 0.05s; }
+        .stagger > *:nth-child(3) { animation-delay: 0.1s; }
+        .stagger > *:nth-child(4) { animation-delay: 0.15s; }
+        .stagger > *:nth-child(5) { animation-delay: 0.2s; }
+        .stagger > *:nth-child(6) { animation-delay: 0.25s; }
+        .stagger > *:nth-child(7) { animation-delay: 0.3s; }
+        .stagger > *:nth-child(8) { animation-delay: 0.35s; }
+        .stagger > *:nth-child(n+9) { animation-delay: 0.4s; }
+
+        /* Paso content slide */
+        #paso-content { animation: slideInRight 0.3s ease-out; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Spinner */
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Navbar scroll */
+        nav { transition: box-shadow 0.3s, background 0.3s; }
+        nav.scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.3); background: rgba(15,23,42,0.98) !important; }
+
+        /* Bonif value transition */
+        #bonif_cliente_val, #bonif_pago_val, #bonif_total_val {
+            transition: color 0.2s;
+        }
     </style>
 </head>
 <body style="min-height: 100vh; background: linear-gradient(180deg, #0f172a 0%, #131c2e 100%);"
@@ -187,10 +244,44 @@ document.querySelectorAll('form[data-loading]').forEach(function(form) {
         var btn = form.querySelector('button[type="submit"]');
         if (btn) {
             btn.disabled = true;
-            btn.style.opacity = '0.5';
-            btn.textContent = form.dataset.loading || 'Procesando...';
+            btn.innerHTML = '<span class="spinner"></span> ' + (form.dataset.loading || 'Procesando...');
+            btn.style.opacity = '0.7';
         }
     });
+});
+
+// PDF buttons loading
+document.querySelectorAll('a[href*="/pdf/"]').forEach(function(a) {
+    a.addEventListener('click', function() {
+        var orig = a.innerHTML;
+        a.innerHTML = '<span class="spinner"></span> Generando...';
+        a.style.opacity = '0.7';
+        setTimeout(function() { a.innerHTML = orig; a.style.opacity = '1'; }, 5000);
+    });
+});
+
+// Navbar scroll effect
+var nav = document.querySelector('nav');
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 10) { nav.classList.add('scrolled'); }
+    else { nav.classList.remove('scrolled'); }
+});
+
+// Count-up for dashboard stats
+document.querySelectorAll('[data-countup]').forEach(function(el) {
+    var target = parseInt(el.dataset.countup) || 0;
+    var duration = 600;
+    var start = 0;
+    var startTime = null;
+    function step(ts) {
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(eased * target).toLocaleString('es-AR');
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString('es-AR');
+    }
+    requestAnimationFrame(step);
 });
 </script>
 </body>

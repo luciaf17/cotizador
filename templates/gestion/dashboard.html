@@ -7,9 +7,9 @@
     <h2 style="color: #f1f5f9; font-size: 22px; font-weight: 700; margin-bottom: 24px;">Dashboard</h2>
 
     <!-- Stats -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px;">
+    <div class="stagger" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px;">
         <div class="card" style="padding: 20px; text-align: center;">
-            <div style="color: #60a5fa; font-size: 28px; font-weight: 700;">{{ cant_confirmadas }}</div>
+            <div style="color: #60a5fa; font-size: 28px; font-weight: 700;" data-countup="{{ cant_confirmadas }}">0</div>
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Confirmadas</div>
         </div>
         <div class="card" style="padding: 20px; text-align: center;">
@@ -17,17 +17,17 @@
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Total vendido</div>
         </div>
         <div class="card" style="padding: 20px; text-align: center;">
-            <div style="color: #facc15; font-size: 28px; font-weight: 700;">{{ pendientes }}</div>
+            <div style="color: #facc15; font-size: 28px; font-weight: 700;" data-countup="{{ pendientes }}">0</div>
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Pendientes</div>
         </div>
         <div class="card" style="padding: 20px; text-align: center;">
-            <div style="color: #e2e8f0; font-size: 28px; font-weight: 700;">{{ vendedores }}</div>
+            <div style="color: #e2e8f0; font-size: 28px; font-weight: 700;" data-countup="{{ vendedores }}">0</div>
             <div style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Vendedores</div>
         </div>
     </div>
 
     <!-- Accesos rapidos -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px;">
+    <div class="stagger" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px;">
         <a href="{% url 'cotizacion_historial' %}" class="card" style="padding: 16px 20px; text-decoration: none; display: flex; align-items: center; gap: 12px;">
             <span style="color: #f1f5f9; font-size: 14px; font-weight: 500;">Historial Cotizaciones</span>
         </a>
