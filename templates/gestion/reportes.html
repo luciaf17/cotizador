@@ -13,8 +13,10 @@
                     <option value="aprobada" {% if filtro_estado == 'aprobada' %}selected{% endif %}>Solo aprobadas</option>
                     <option value="todas" {% if filtro_estado == 'todas' %}selected{% endif %}>Todas</option>
                 </select>
-                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;" placeholder="Desde">
-                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;" placeholder="Hasta">
+                <span style="color: #64748b; font-size: 11px;">Desde</span>
+                <input type="date" name="fecha_desde" value="{{ fecha_desde }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;">
+                <span style="color: #64748b; font-size: 11px;">Hasta</span>
+                <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" class="input-dark" style="width: 145px; padding: 8px 10px; font-size: 12px;">
                 <button type="submit" style="padding: 8px 14px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;">Filtrar</button>
             </form>
             <a href="{% url 'dashboard' %}" class="btn-secondary" style="text-decoration: none;">&larr; Dashboard</a>
