@@ -127,7 +127,7 @@ def _build_paso_context(cotizacion, orden, tenant):
 
     # Resumen de selecciones: todos los items de la cotización
     items_resumen = []
-    for item in cotizacion.items.select_related('producto', 'familia').all():
+    for item in cotizacion.items.select_related('producto', 'familia').order_by('familia__orden', 'id'):
         items_resumen.append({
             'item': item,
             'puede_quitar': item.familia.obligatoria == 'NO',
@@ -550,7 +550,7 @@ def paso_rodados(request, cotizacion_id, familia_idx):
         'falta_seleccion': familia.obligatoria == 'SI' and not seleccionados_familia and bool(productos_disponibles),
         'items_resumen': [
             {'item': item, 'puede_quitar': item.familia.obligatoria == 'NO'}
-            for item in cotizacion.items.select_related('producto', 'familia').all()
+            for item in cotizacion.items.select_related('producto', 'familia').order_by('familia__orden', 'id')
         ],
     }
 
@@ -783,7 +783,7 @@ def historial(request):
 def resumen(request, cotizacion_id):
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
-    items = cotizacion.items.select_related('producto', 'familia').all()
+    items = cotizacion.items.select_related('producto', 'familia').order_by('familia__orden', 'id')
 
     puede_ver_comision = (
         tenant.mostrar_comisiones
@@ -871,7 +871,7 @@ def descargar_pdf(request, cotizacion_id):
     from apps.precios.views import _generate_pdf
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
-    items = cotizacion.items.select_related('producto', 'familia').all()
+    items = cotizacion.items.select_related('producto', 'familia').order_by('familia__orden', 'id')
 
     from apps.precios.views import _get_logo_url
     html = render_to_string('pdf/cotizacion.html', {

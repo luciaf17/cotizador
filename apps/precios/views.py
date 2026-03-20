@@ -183,7 +183,7 @@ def generar_pdf_cotizacion(request, cotizacion_id):
     from apps.cotizaciones.models import Cotizacion
     tenant = _get_tenant(request)
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, tenant=tenant)
-    items = cotizacion.items.select_related('producto', 'familia').all()
+    items = cotizacion.items.select_related('producto', 'familia').order_by('familia__orden', 'id')
 
     html = render_to_string('pdf/cotizacion.html', {
         'cotizacion': cotizacion,
