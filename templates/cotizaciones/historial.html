@@ -73,6 +73,14 @@
                         <button type="submit" style="padding: 6px 12px; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Confirmar</button>
                     </form>
                     {% endif %}
+
+                    {% if cot.estado == 'borrador' %}
+                    <form method="post" action="{% url 'cotizacion_descartar' cotizacion_id=cot.id %}" style="margin: 0;"
+                          onsubmit="return confirm('Descartar cotizacion {{ cot.numero }}?');">
+                        {% csrf_token %}
+                        <button type="submit" style="padding: 6px 12px; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;">Descartar</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
             </div>
